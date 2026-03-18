@@ -25,3 +25,5 @@ python step1_generate_trajectories.py --dry-run
 # screen -S step1
 python step1_generate_trajectories.py --model gemini-2.5-flash --temperature 0.7
 # Ctrl+A D to detach
+
+python run_qwen_ab_test.py --backend openai --api-base http://localhost:8000/v1 --api-key dummy --model Qwen3-VL-8B-Instruct
