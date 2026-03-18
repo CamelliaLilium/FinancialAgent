@@ -1,0 +1,44 @@
+{
+  "dataset_meta": {
+    "dataset_file": "/root/autodl-tmp/datasets/test/bizbench_test.json",
+    "selected_samples": 5,
+    "offset": 0,
+    "limit_per_dataset": 5,
+    "planning_enabled": true,
+    "multimodal_mode": "best_effort",
+    "image_root": "",
+    "numeric_extract_strategy": "any",
+    "rag_top_k": 0,
+    "rag_persist_dir": "/root/rag/chroma_db",
+    "cot_enabled": true,
+    "llm_model": "Qwen/Qwen3-VL-8B-Instruct",
+    "workflow_final_answer_source": "planning_flow._synthesize_user_final_answer"
+  },
+  "summary": {
+    "total": 5,
+    "correct": 2,
+    "accuracy": 0.4,
+    "status_counts": {
+      "ok": 5
+    },
+    "avg_elapsed_seconds": 258.218,
+    "p50_elapsed_seconds": 279.844,
+    "p95_elapsed_seconds": 332.021,
+    "error_tag_counts": {
+      "correct": 2,
+      "code_mismatch": 3
+    },
+    "tool_usage_counts": {},
+    "numeric_mae": null,
+    "numeric_eval_samples": 0,
+    "avg_llm_call_count": 8.0,
+    "avg_zero_tool_rounds": 3.0,
+    "avg_blocked_marks": 0.0,
+    "numeric_parse_ambiguity_count": 0,
+    "multimodal_samples": 0,
+    "multimodal_resolved_samples": 0,
+    "multimodal_resolution_rate": null,
+    "multimodal_vision_ok": 0,
+    "multimodal_vision_failed": 0
+  }
+}

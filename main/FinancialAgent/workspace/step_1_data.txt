@@ -1,0 +1,7 @@
+Assess the following statement from a central bank's circular. Indicate it as HAWKISH if it conveys a tightening of monetary policy, DOVISH if it insinuates an easing of monetary policy, or NEUTRAL if the stance is dispassionate. Your response should return only HAWKISH, DOVISH, or NEUTRAL.
+
+Text: Fourth and finally, the statement codifies the key lesson from the Global Financial Crisisâ€”that financial stability is necessary for the achievement of our statutory goals of maximum employment and price stability.
+
+Answer:
+
+Key evidence: The statement emphasizes the importance of financial stability for achieving employment and price stability goals but does not explicitly mention any changes in monetary policy, such as interest rate adjustments, quantitative tightening, or forward guidance. Therefore, it is dispassionate in its stance on monetary policy.

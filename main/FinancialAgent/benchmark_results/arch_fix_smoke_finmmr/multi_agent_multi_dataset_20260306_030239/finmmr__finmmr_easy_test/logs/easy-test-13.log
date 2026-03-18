@@ -1,0 +1,30 @@
+2026-03-06 03:18:01.169 | INFO     | app.flow.planning:_create_initial_plan:400 - Creating initial plan with ID: plan_1772738279
+2026-03-06 03:18:39.630 | INFO     | app.llm:update_token_count:252 - Token usage: Input=452, Completion=109, Cumulative Input=133871, Cumulative Completion=6932, Total=561, Cumulative Total=140803
+2026-03-06 03:18:39.631 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 03:18:53.155 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1669, Completion=150, Cumulative Input=135540, Cumulative Completion=7082, Total=1819, Cumulative Total=142622
+2026-03-06 03:18:53.156 | INFO     | app.agent.toolcall:think:142 - ✨ Manus's thoughts:
+2026-03-06 03:18:53.156 | INFO     | app.agent.toolcall:think:143 - 🛠️ Manus selected 0 tools to use
+2026-03-06 03:18:53.156 | WARNING  | app.agent.toolcall:_handle_no_tool_round:206 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 03:18:59.052 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1081, Completion=62, Cumulative Input=136621, Cumulative Completion=7144, Total=1143, Cumulative Total=143765
+2026-03-06 03:18:59.052 | INFO     | app.agent.toolcall:cleanup:435 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 03:18:59.052 | INFO     | app.agent.toolcall:cleanup:447 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 03:18:59.053 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 0 as completed in plan plan_1772738279
+2026-03-06 03:18:59.053 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 03:19:11.085 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1727, Completion=90, Cumulative Input=138348, Cumulative Completion=7234, Total=1817, Cumulative Total=145582
+2026-03-06 03:19:11.085 | INFO     | app.agent.toolcall:think:142 - ✨ Manus's thoughts:
+2026-03-06 03:19:11.085 | INFO     | app.agent.toolcall:think:143 - 🛠️ Manus selected 0 tools to use
+2026-03-06 03:19:11.085 | WARNING  | app.agent.toolcall:_handle_no_tool_round:206 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 03:19:22.005 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1197, Completion=62, Cumulative Input=139545, Cumulative Completion=7296, Total=1259, Cumulative Total=146841
+2026-03-06 03:19:22.005 | INFO     | app.agent.toolcall:cleanup:435 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 03:19:22.005 | INFO     | app.agent.toolcall:cleanup:447 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 03:19:22.006 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 1 as completed in plan plan_1772738279
+2026-03-06 03:19:22.006 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 03:19:24.370 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1778, Completion=69, Cumulative Input=141323, Cumulative Completion=7365, Total=1847, Cumulative Total=148688
+2026-03-06 03:19:24.370 | INFO     | app.agent.toolcall:think:142 - ✨ Manus's thoughts:
+2026-03-06 03:19:24.370 | INFO     | app.agent.toolcall:think:143 - 🛠️ Manus selected 0 tools to use
+2026-03-06 03:19:24.371 | WARNING  | app.agent.toolcall:_handle_no_tool_round:206 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 03:19:26.247 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1299, Completion=62, Cumulative Input=142622, Cumulative Completion=7427, Total=1361, Cumulative Total=150049
+2026-03-06 03:19:26.248 | INFO     | app.agent.toolcall:cleanup:435 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 03:19:26.248 | INFO     | app.agent.toolcall:cleanup:447 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 03:19:26.248 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 2 as completed in plan plan_1772738279
+2026-03-06 03:19:27.917 | INFO     | app.llm:update_token_count:252 - Token usage: Input=425, Completion=50, Cumulative Input=143047, Cumulative Completion=7477, Total=475, Cumulative Total=150524

@@ -1,0 +1,48 @@
+{
+  "args": {
+    "dataset": "Dataset/Finben/finben_test.json",
+    "output_dir": "benchmark_results",
+    "limit": 0,
+    "offset": 0,
+    "timeout": 600,
+    "force_planning": false,
+    "disable_planning": false
+  },
+  "summary": {
+    "total": 496,
+    "correct": 247,
+    "accuracy": 0.497984,
+    "avg_elapsed_seconds": 34.308,
+    "confusion_matrix": {
+      "dovish": {
+        "dovish": 68,
+        "neutral": 56,
+        "hawkish": 5
+      },
+      "neutral": {
+        "dovish": 86,
+        "neutral": 151,
+        "hawkish": 8
+      },
+      "hawkish": {
+        "dovish": 57,
+        "hawkish": 28,
+        "neutral": 37
+      }
+    },
+    "error_tag_counts": {
+      "same_args_repeated": 496,
+      "reasoning_or_prompt_misalignment": 249,
+      "tool_execution_error": 35,
+      "repeated_tool_loop": 11,
+      "likely_unnecessary_web_search": 2
+    },
+    "tool_usage_counts": {
+      "planning": 536,
+      "terminate": 1828,
+      "python_execute": 109,
+      "str_replace_editor": 85,
+      "web_search": 8
+    }
+  }
+}

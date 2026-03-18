@@ -1,0 +1,21 @@
+2026-03-06 22:14:32.718 | INFO     | app.flow.planning:_create_initial_plan:400 - Creating initial plan with ID: plan_1772806469
+2026-03-06 22:14:35.465 | INFO     | app.llm:update_token_count:252 - Token usage: Input=425, Completion=94, Cumulative Input=68966, Cumulative Completion=7575, Total=519, Cumulative Total=76541
+2026-03-06 22:14:35.466 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:14:36.332 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1650, Completion=34, Cumulative Input=70616, Cumulative Completion=7609, Total=1684, Cumulative Total=78225
+2026-03-06 22:14:36.332 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:14:36.332 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:14:36.333 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:14:38.498 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1053, Completion=66, Cumulative Input=71669, Cumulative Completion=7675, Total=1119, Cumulative Total=79344
+2026-03-06 22:14:38.498 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:14:38.498 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:14:38.499 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 0 as completed in plan plan_1772806469
+2026-03-06 22:14:38.499 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:15:53.131 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1690, Completion=88, Cumulative Input=73359, Cumulative Completion=7763, Total=1778, Cumulative Total=81122
+2026-03-06 22:15:53.131 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:15:53.131 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:15:53.131 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:15:54.066 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1133, Completion=64, Cumulative Input=74492, Cumulative Completion=7827, Total=1197, Cumulative Total=82319
+2026-03-06 22:15:54.066 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:15:54.067 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:15:54.067 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 1 as completed in plan plan_1772806469
+2026-03-06 22:16:08.654 | INFO     | app.llm:update_token_count:252 - Token usage: Input=347, Completion=70, Cumulative Input=74839, Cumulative Completion=7897, Total=417, Cumulative Total=82736

@@ -1,0 +1,64 @@
+{
+  "args": {
+    "dataset": "Dataset/Finben/finben_test.json",
+    "output_dir": "benchmark_results/base_rerun_single_finance",
+    "limit": 0,
+    "offset": 0,
+    "timeout": 600,
+    "agent": "finance"
+  },
+  "summary": {
+    "total": 496,
+    "correct": 293,
+    "accuracy": 0.590726,
+    "macro_f1": 0.470878,
+    "per_label": {
+      "dovish": {
+        "precision": 0.787879,
+        "recall": 0.20155,
+        "f1": 0.320988,
+        "support": 129
+      },
+      "hawkish": {
+        "precision": 0.622642,
+        "recall": 0.270492,
+        "f1": 0.377143,
+        "support": 122
+      },
+      "neutral": {
+        "precision": 0.570732,
+        "recall": 0.955102,
+        "f1": 0.714504,
+        "support": 245
+      }
+    },
+    "avg_elapsed_seconds": 21.047,
+    "confusion_matrix": {
+      "dovish": {
+        "neutral": 90,
+        "hawkish": 13,
+        "dovish": 26
+      },
+      "neutral": {
+        "neutral": 234,
+        "hawkish": 7,
+        "dovish": 4
+      },
+      "hawkish": {
+        "neutral": 86,
+        "dovish": 3,
+        "hawkish": 33
+      }
+    },
+    "error_tag_counts": {
+      "reasoning_or_prompt_misalignment": 203,
+      "label_extraction_ambiguity": 34,
+      "correct": 275,
+      "tool_execution_error": 1
+    },
+    "tool_usage_counts": {
+      "terminate": 495
+    },
+    "label_extraction_first_last_mismatch": 34
+  }
+}

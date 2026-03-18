@@ -1,0 +1,40 @@
+{
+  "dataset_meta": {
+    "dataset_file": "/root/autodl-tmp/Open Manus /金融Agent架构/金融Agent/Dataset/finmmr/finmmr_medium_test.json",
+    "selected_samples": 20,
+    "offset": 0,
+    "limit_per_dataset": 20,
+    "planning_enabled": true,
+    "multimodal_mode": "strict",
+    "image_root": "/root/autodl-tmp/Open Manus /金融Agent架构/金融Agent/Dataset/finmmr/images",
+    "llm_model": "Qwen/Qwen3-VL-8B-Instruct",
+    "workflow_final_answer_source": "planning_flow._synthesize_user_final_answer"
+  },
+  "summary": {
+    "total": 20,
+    "correct": 4,
+    "accuracy": 0.2,
+    "status_counts": {
+      "ok": 18,
+      "timeout": 2
+    },
+    "avg_elapsed_seconds": 279.973,
+    "p50_elapsed_seconds": 238.133,
+    "p95_elapsed_seconds": 600.033,
+    "error_tag_counts": {
+      "correct": 4,
+      "numeric_mismatch": 13,
+      "timeout": 2,
+      "empty_output": 2,
+      "prediction_parse_failure": 1
+    },
+    "tool_usage_counts": {},
+    "numeric_mae": 705.583884,
+    "numeric_eval_samples": 17,
+    "multimodal_samples": 19,
+    "multimodal_resolved_samples": 19,
+    "multimodal_resolution_rate": 1.0,
+    "multimodal_vision_ok": 19,
+    "multimodal_vision_failed": 0
+  }
+}

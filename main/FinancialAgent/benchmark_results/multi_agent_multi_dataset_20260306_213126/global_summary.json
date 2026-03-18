@@ -1,0 +1,95 @@
+{
+  "run_meta": {
+    "run_id": "20260306_213126",
+    "created_at": "2026-03-06T21:31:26.277341",
+    "llm_model": "Qwen/Qwen3-VL-8B-Instruct",
+    "planning_enabled": true,
+    "multimodal_mode": "best_effort",
+    "numeric_extract_strategy": "any",
+    "image_root": "",
+    "vision_timeout_s": 120,
+    "max_images_per_sample": 1,
+    "timeout_s": 600,
+    "offset": 0,
+    "limit_per_dataset": 2,
+    "dataset_selection": "all",
+    "datasets": [
+      "/root/autodl-tmp/datasets/test/bizbench_test.json",
+      "/root/autodl-tmp/datasets/test/finmmr_easy_test.json",
+      "/root/autodl-tmp/datasets/test/finmmr_hard_test.json",
+      "/root/autodl-tmp/datasets/test/finmmr_medium_test.json",
+      "/root/autodl-tmp/datasets/test/flare-convfinqa_test.json"
+    ],
+    "rag_top_k": 0,
+    "rag_persist_dir": "/root/rag/chroma_db",
+    "cot_enabled": true,
+    "workflow_final_answer_source": "planning_flow._synthesize_user_final_answer"
+  },
+  "overall": {
+    "total": 10,
+    "correct": 6,
+    "accuracy": 0.6
+  },
+  "datasets": [
+    {
+      "dataset_file": "/root/autodl-tmp/datasets/test/bizbench_test.json",
+      "output_dir": "/root/autodl-tmp/main/FinancialAgent/benchmark_results/multi_agent_multi_dataset_20260306_213126/test__bizbench_test",
+      "total": 2,
+      "correct": 1,
+      "accuracy": 0.5,
+      "avg_elapsed_seconds": 192.605,
+      "p95_elapsed_seconds": 197.345,
+      "numeric_mae": null,
+      "multimodal_resolution_rate": null,
+      "multimodal_vision_failed": 0
+    },
+    {
+      "dataset_file": "/root/autodl-tmp/datasets/test/finmmr_easy_test.json",
+      "output_dir": "/root/autodl-tmp/main/FinancialAgent/benchmark_results/multi_agent_multi_dataset_20260306_213126/test__finmmr_easy_test",
+      "total": 2,
+      "correct": 2,
+      "accuracy": 1.0,
+      "avg_elapsed_seconds": 76.996,
+      "p95_elapsed_seconds": 129.886,
+      "numeric_mae": 0.002165,
+      "multimodal_resolution_rate": 1.0,
+      "multimodal_vision_failed": 0
+    },
+    {
+      "dataset_file": "/root/autodl-tmp/datasets/test/finmmr_hard_test.json",
+      "output_dir": "/root/autodl-tmp/main/FinancialAgent/benchmark_results/multi_agent_multi_dataset_20260306_213126/test__finmmr_hard_test",
+      "total": 2,
+      "correct": 0,
+      "accuracy": 0.0,
+      "avg_elapsed_seconds": 46.707,
+      "p95_elapsed_seconds": 50.587,
+      "numeric_mae": 129.947,
+      "multimodal_resolution_rate": 1.0,
+      "multimodal_vision_failed": 0
+    },
+    {
+      "dataset_file": "/root/autodl-tmp/datasets/test/finmmr_medium_test.json",
+      "output_dir": "/root/autodl-tmp/main/FinancialAgent/benchmark_results/multi_agent_multi_dataset_20260306_213126/test__finmmr_medium_test",
+      "total": 2,
+      "correct": 1,
+      "accuracy": 0.5,
+      "avg_elapsed_seconds": 42.67,
+      "p95_elapsed_seconds": 45.937,
+      "numeric_mae": 0.170711,
+      "multimodal_resolution_rate": 1.0,
+      "multimodal_vision_failed": 0
+    },
+    {
+      "dataset_file": "/root/autodl-tmp/datasets/test/flare-convfinqa_test.json",
+      "output_dir": "/root/autodl-tmp/main/FinancialAgent/benchmark_results/multi_agent_multi_dataset_20260306_213126/test__flare-convfinqa_test",
+      "total": 2,
+      "correct": 2,
+      "accuracy": 1.0,
+      "avg_elapsed_seconds": 38.126,
+      "p95_elapsed_seconds": 44.044,
+      "numeric_mae": 0.0,
+      "multimodal_resolution_rate": null,
+      "multimodal_vision_failed": 0
+    }
+  ]
+}

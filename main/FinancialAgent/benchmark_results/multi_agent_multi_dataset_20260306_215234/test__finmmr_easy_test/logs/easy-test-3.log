@@ -1,0 +1,30 @@
+2026-03-06 22:16:43.579 | INFO     | app.flow.planning:_create_initial_plan:400 - Creating initial plan with ID: plan_1772806596
+2026-03-06 22:16:45.572 | INFO     | app.llm:update_token_count:252 - Token usage: Input=425, Completion=112, Cumulative Input=89884, Cumulative Completion=8432, Total=537, Cumulative Total=98316
+2026-03-06 22:16:45.573 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:17:01.186 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1637, Completion=108, Cumulative Input=91521, Cumulative Completion=8540, Total=1745, Cumulative Total=100061
+2026-03-06 22:17:01.187 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:17:01.187 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:17:01.187 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:17:02.848 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1027, Completion=66, Cumulative Input=92548, Cumulative Completion=8606, Total=1093, Cumulative Total=101154
+2026-03-06 22:17:02.848 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:17:02.848 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:17:02.848 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 0 as completed in plan plan_1772806596
+2026-03-06 22:17:02.849 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:17:05.536 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1688, Completion=125, Cumulative Input=94236, Cumulative Completion=8731, Total=1813, Cumulative Total=102967
+2026-03-06 22:17:05.536 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:17:05.536 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:17:05.536 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:17:14.606 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1129, Completion=70, Cumulative Input=95365, Cumulative Completion=8801, Total=1199, Cumulative Total=104166
+2026-03-06 22:17:14.607 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:17:14.607 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:17:14.607 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 1 as completed in plan plan_1772806596
+2026-03-06 22:17:14.608 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:17:16.773 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1773, Completion=106, Cumulative Input=97138, Cumulative Completion=8907, Total=1879, Cumulative Total=106045
+2026-03-06 22:17:16.774 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:17:16.774 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:17:16.774 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:17:18.895 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1299, Completion=70, Cumulative Input=98437, Cumulative Completion=8977, Total=1369, Cumulative Total=107414
+2026-03-06 22:17:18.895 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:17:18.896 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:17:18.896 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 2 as completed in plan plan_1772806596
+2026-03-06 22:17:26.417 | INFO     | app.llm:update_token_count:252 - Token usage: Input=423, Completion=44, Cumulative Input=98860, Cumulative Completion=9021, Total=467, Cumulative Total=107881

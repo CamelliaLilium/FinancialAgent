@@ -1,0 +1,30 @@
+2026-03-06 22:37:59.578 | INFO     | app.flow.planning:_create_initial_plan:400 - Creating initial plan with ID: plan_1772807879
+2026-03-06 22:38:03.263 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1875, Completion=76, Cumulative Input=302195, Cumulative Completion=20240, Total=1951, Cumulative Total=322435
+2026-03-06 22:38:03.264 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:38:11.175 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3081, Completion=123, Cumulative Input=305276, Cumulative Completion=20363, Total=3204, Cumulative Total=325639
+2026-03-06 22:38:11.175 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:38:11.175 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:38:11.175 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:38:14.283 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3915, Completion=57, Cumulative Input=309191, Cumulative Completion=20420, Total=3972, Cumulative Total=329611
+2026-03-06 22:38:14.283 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:38:14.283 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:38:14.284 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 0 as completed in plan plan_1772807879
+2026-03-06 22:38:14.284 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:38:27.452 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3132, Completion=105, Cumulative Input=312323, Cumulative Completion=20525, Total=3237, Cumulative Total=332848
+2026-03-06 22:38:27.453 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:38:27.453 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:38:27.453 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:38:32.542 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4017, Completion=57, Cumulative Input=316340, Cumulative Completion=20582, Total=4074, Cumulative Total=336922
+2026-03-06 22:38:32.543 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:38:32.543 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:38:32.543 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 1 as completed in plan plan_1772807879
+2026-03-06 22:38:32.544 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:38:34.916 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3189, Completion=74, Cumulative Input=319529, Cumulative Completion=20656, Total=3263, Cumulative Total=340185
+2026-03-06 22:38:34.916 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:38:34.916 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:38:34.917 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:38:40.475 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4131, Completion=44, Cumulative Input=323660, Cumulative Completion=20700, Total=4175, Cumulative Total=344360
+2026-03-06 22:38:40.475 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:38:40.475 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:38:40.476 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 2 as completed in plan plan_1772807879
+2026-03-06 22:38:41.861 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1825, Completion=39, Cumulative Input=325485, Cumulative Completion=20739, Total=1864, Cumulative Total=346224
