@@ -6,3 +6,7 @@ rag_v1/
 datasets/
 ReasoningRag/images/
 ReasoningRag/NV-Embed-v2/
+
+# Large dataset files (exceed GitHub 100MB limit)
+ReasoningRag/raw/finmme_train.json
+main/FinancialAgent/Dataset/finmme/finmme_test.json
