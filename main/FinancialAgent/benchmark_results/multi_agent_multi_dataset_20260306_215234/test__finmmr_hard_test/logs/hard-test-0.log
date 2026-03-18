@@ -1,0 +1,30 @@
+2026-03-06 22:18:31.083 | INFO     | app.flow.planning:_create_initial_plan:400 - Creating initial plan with ID: plan_1772806692
+2026-03-06 22:18:47.162 | INFO     | app.llm:update_token_count:252 - Token usage: Input=444, Completion=136, Cumulative Input=112434, Cumulative Completion=9830, Total=580, Cumulative Total=122264
+2026-03-06 22:18:47.163 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:18:58.998 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1659, Completion=127, Cumulative Input=114093, Cumulative Completion=9957, Total=1786, Cumulative Total=124050
+2026-03-06 22:18:58.998 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:18:58.998 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:18:58.998 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:19:01.036 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1071, Completion=88, Cumulative Input=115164, Cumulative Completion=10045, Total=1159, Cumulative Total=125209
+2026-03-06 22:19:01.037 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:19:01.037 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:19:01.037 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 0 as completed in plan plan_1772806692
+2026-03-06 22:19:01.038 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:19:02.073 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1744, Completion=29, Cumulative Input=116908, Cumulative Completion=10074, Total=1773, Cumulative Total=126982
+2026-03-06 22:19:02.073 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:19:02.073 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:19:02.073 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:19:05.649 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1241, Completion=130, Cumulative Input=118149, Cumulative Completion=10204, Total=1371, Cumulative Total=128353
+2026-03-06 22:19:05.649 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:19:05.649 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:19:05.649 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 1 as completed in plan plan_1772806692
+2026-03-06 22:19:05.650 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:19:10.801 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1891, Completion=47, Cumulative Input=120040, Cumulative Completion=10251, Total=1938, Cumulative Total=130291
+2026-03-06 22:19:10.801 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:19:10.802 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:19:10.802 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:19:16.132 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1535, Completion=196, Cumulative Input=121575, Cumulative Completion=10447, Total=1731, Cumulative Total=132022
+2026-03-06 22:19:16.132 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:19:16.132 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:19:16.133 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 2 as completed in plan plan_1772806692
+2026-03-06 22:19:19.742 | INFO     | app.llm:update_token_count:252 - Token usage: Input=651, Completion=126, Cumulative Input=122226, Cumulative Completion=10573, Total=777, Cumulative Total=132799

@@ -1,0 +1,8 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+rag_v1/
+datasets/
+ReasoningRag/images/
+ReasoningRag/NV-Embed-v2/

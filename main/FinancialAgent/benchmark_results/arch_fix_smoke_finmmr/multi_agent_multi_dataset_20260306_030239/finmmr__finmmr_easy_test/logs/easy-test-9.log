@@ -1,0 +1,30 @@
+2026-03-06 03:09:04.527 | INFO     | app.flow.planning:_create_initial_plan:400 - Creating initial plan with ID: plan_1772737742
+2026-03-06 03:09:11.502 | INFO     | app.llm:update_token_count:252 - Token usage: Input=386, Completion=108, Cumulative Input=114032, Cumulative Completion=5576, Total=494, Cumulative Total=119608
+2026-03-06 03:09:11.502 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 03:09:14.521 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1597, Completion=25, Cumulative Input=115629, Cumulative Completion=5601, Total=1622, Cumulative Total=121230
+2026-03-06 03:09:14.521 | INFO     | app.agent.toolcall:think:142 - ✨ Manus's thoughts:
+2026-03-06 03:09:14.522 | INFO     | app.agent.toolcall:think:143 - 🛠️ Manus selected 0 tools to use
+2026-03-06 03:09:14.522 | WARNING  | app.agent.toolcall:_handle_no_tool_round:206 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 03:09:19.988 | INFO     | app.llm:update_token_count:252 - Token usage: Input=937, Completion=65, Cumulative Input=116566, Cumulative Completion=5666, Total=1002, Cumulative Total=122232
+2026-03-06 03:09:19.989 | INFO     | app.agent.toolcall:cleanup:435 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 03:09:19.989 | INFO     | app.agent.toolcall:cleanup:447 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 03:09:19.989 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 0 as completed in plan plan_1772737742
+2026-03-06 03:09:19.989 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 03:09:56.809 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1670, Completion=230, Cumulative Input=118236, Cumulative Completion=5896, Total=1900, Cumulative Total=124132
+2026-03-06 03:09:56.810 | INFO     | app.agent.toolcall:think:142 - ✨ Manus's thoughts:
+2026-03-06 03:09:56.810 | INFO     | app.agent.toolcall:think:143 - 🛠️ Manus selected 0 tools to use
+2026-03-06 03:09:56.810 | WARNING  | app.agent.toolcall:_handle_no_tool_round:206 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 03:10:08.685 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1083, Completion=108, Cumulative Input=119319, Cumulative Completion=6004, Total=1191, Cumulative Total=125323
+2026-03-06 03:10:08.686 | INFO     | app.agent.toolcall:cleanup:435 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 03:10:08.686 | INFO     | app.agent.toolcall:cleanup:447 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 03:10:08.686 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 1 as completed in plan plan_1772737742
+2026-03-06 03:10:08.687 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 03:10:33.691 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1761, Completion=169, Cumulative Input=121080, Cumulative Completion=6173, Total=1930, Cumulative Total=127253
+2026-03-06 03:10:33.692 | INFO     | app.agent.toolcall:think:142 - ✨ Manus's thoughts:
+2026-03-06 03:10:33.692 | INFO     | app.agent.toolcall:think:143 - 🛠️ Manus selected 0 tools to use
+2026-03-06 03:10:33.692 | WARNING  | app.agent.toolcall:_handle_no_tool_round:206 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 03:10:37.762 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1265, Completion=108, Cumulative Input=122345, Cumulative Completion=6281, Total=1373, Cumulative Total=128626
+2026-03-06 03:10:37.762 | INFO     | app.agent.toolcall:cleanup:435 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 03:10:37.763 | INFO     | app.agent.toolcall:cleanup:447 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 03:10:37.763 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 2 as completed in plan plan_1772737742
+2026-03-06 03:10:47.568 | INFO     | app.llm:update_token_count:252 - Token usage: Input=454, Completion=97, Cumulative Input=122799, Cumulative Completion=6378, Total=551, Cumulative Total=129177

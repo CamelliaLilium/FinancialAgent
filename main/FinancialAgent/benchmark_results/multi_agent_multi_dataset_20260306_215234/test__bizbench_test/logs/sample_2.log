@@ -1,0 +1,30 @@
+2026-03-06 22:02:02.548 | INFO     | app.flow.planning:_create_initial_plan:400 - Creating initial plan with ID: plan_1772805722
+2026-03-06 22:02:04.618 | INFO     | app.llm:update_token_count:252 - Token usage: Input=472, Completion=67, Cumulative Input=21071, Cumulative Completion=2451, Total=539, Cumulative Total=23522
+2026-03-06 22:02:04.618 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:02:49.331 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1668, Completion=179, Cumulative Input=22739, Cumulative Completion=2630, Total=1847, Cumulative Total=25369
+2026-03-06 22:02:49.332 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:02:49.332 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:02:49.332 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:02:51.241 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1089, Completion=99, Cumulative Input=23828, Cumulative Completion=2729, Total=1188, Cumulative Total=26557
+2026-03-06 22:02:51.242 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:02:51.242 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:02:51.242 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 0 as completed in plan plan_1772805722
+2026-03-06 22:02:51.242 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:04:42.820 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1766, Completion=852, Cumulative Input=25594, Cumulative Completion=3581, Total=2618, Cumulative Total=29175
+2026-03-06 22:04:42.820 | INFO     | app.agent.toolcall:think:164 - ✨ Manus's thoughts:
+2026-03-06 22:04:42.820 | INFO     | app.agent.toolcall:think:165 - 🛠️ Manus selected 0 tools to use
+2026-03-06 22:04:42.821 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Manus: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:04:58.838 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1285, Completion=69, Cumulative Input=26879, Cumulative Completion=3650, Total=1354, Cumulative Total=30529
+2026-03-06 22:04:58.839 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-06 22:04:58.839 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-06 22:04:58.839 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 1 as completed in plan plan_1772805722
+2026-03-06 22:04:58.840 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-06 22:05:12.301 | INFO     | app.llm:update_token_count:252 - Token usage: Input=2017, Completion=593, Cumulative Input=28896, Cumulative Completion=4243, Total=2610, Cumulative Total=33139
+2026-03-06 22:05:12.301 | INFO     | app.agent.toolcall:think:164 - ✨ Finance's thoughts:
+2026-03-06 22:05:12.302 | INFO     | app.agent.toolcall:think:165 - 🛠️ Finance selected 0 tools to use
+2026-03-06 22:05:12.302 | WARNING  | app.agent.toolcall:_handle_no_tool_round:228 - Finance: no-tool empty response detected; finishing to avoid idle loop.
+2026-03-06 22:07:31.383 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1530, Completion=162, Cumulative Input=30426, Cumulative Completion=4405, Total=1692, Cumulative Total=34831
+2026-03-06 22:07:31.384 | INFO     | app.agent.toolcall:cleanup:457 - 🧹 Cleaning up resources for agent 'Finance'...
+2026-03-06 22:07:31.384 | INFO     | app.agent.toolcall:cleanup:469 - ✨ Cleanup complete for agent 'Finance'.
+2026-03-06 22:07:31.384 | INFO     | app.flow.planning:_mark_step_completed:634 - Marked step 2 as completed in plan plan_1772805722
+2026-03-06 22:07:45.733 | INFO     | app.llm:update_token_count:252 - Token usage: Input=594, Completion=60, Cumulative Input=31020, Cumulative Completion=4465, Total=654, Cumulative Total=35485

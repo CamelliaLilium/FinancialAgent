@@ -1,0 +1,115 @@
+2026-03-05 22:22:30.981 | INFO     | app.flow.planning:_create_initial_plan:400 - Creating initial plan with ID: plan_1772720550
+2026-03-05 22:22:50.329 | INFO     | app.llm:update_token_count:252 - Token usage: Input=1955, Completion=145, Cumulative Input=767082, Cumulative Completion=47062, Total=2100, Cumulative Total=814144
+2026-03-05 22:22:50.330 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-05 22:23:05.893 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3175, Completion=105, Cumulative Input=770257, Cumulative Completion=47167, Total=3280, Cumulative Total=817424
+2026-03-05 22:23:05.894 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:23:05.894 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:23:05.894 | INFO     | app.agent.base:run:145 - Executing step 2/6
+2026-03-05 22:23:23.740 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3335, Completion=114, Cumulative Input=773592, Cumulative Completion=47281, Total=3449, Cumulative Total=820873
+2026-03-05 22:23:23.740 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:23:23.741 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:23:23.741 | INFO     | app.agent.base:run:145 - Executing step 3/6
+2026-03-05 22:23:38.726 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3495, Completion=114, Cumulative Input=777087, Cumulative Completion=47395, Total=3609, Cumulative Total=824482
+2026-03-05 22:23:38.727 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:23:38.727 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:23:38.727 | INFO     | app.agent.base:run:145 - Executing step 4/6
+2026-03-05 22:23:59.844 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3655, Completion=121, Cumulative Input=780742, Cumulative Completion=47516, Total=3776, Cumulative Total=828258
+2026-03-05 22:23:59.845 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:23:59.845 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:23:59.845 | INFO     | app.agent.base:run:145 - Executing step 5/6
+2026-03-05 22:24:13.006 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3815, Completion=131, Cumulative Input=784557, Cumulative Completion=47647, Total=3946, Cumulative Total=832204
+2026-03-05 22:24:13.006 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:24:13.006 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:24:13.006 | INFO     | app.agent.base:run:145 - Executing step 6/6
+2026-03-05 22:24:32.925 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3975, Completion=205, Cumulative Input=788532, Cumulative Completion=47852, Total=4180, Cumulative Total=836384
+2026-03-05 22:24:32.925 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:24:32.925 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:24:58.504 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4893, Completion=62, Cumulative Input=793425, Cumulative Completion=47914, Total=4955, Cumulative Total=841339
+2026-03-05 22:24:58.504 | INFO     | app.agent.toolcall:cleanup:387 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-05 22:24:58.504 | INFO     | app.agent.toolcall:cleanup:399 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-05 22:24:58.504 | WARNING  | app.flow.planning:_mark_step_blocked:589 - Marked step 0 as blocked in plan plan_1772720550
+2026-03-05 22:24:58.505 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-05 22:25:06.266 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3219, Completion=30, Cumulative Input=796644, Cumulative Completion=47944, Total=3249, Cumulative Total=844588
+2026-03-05 22:25:06.266 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:25:06.266 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:25:06.266 | INFO     | app.agent.base:run:145 - Executing step 2/6
+2026-03-05 22:25:07.830 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3379, Completion=30, Cumulative Input=800023, Cumulative Completion=47974, Total=3409, Cumulative Total=847997
+2026-03-05 22:25:07.831 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:25:07.831 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:25:07.831 | INFO     | app.agent.base:run:145 - Executing step 3/6
+2026-03-05 22:25:27.824 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3539, Completion=108, Cumulative Input=803562, Cumulative Completion=48082, Total=3647, Cumulative Total=851644
+2026-03-05 22:25:27.824 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:25:27.825 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:25:27.825 | INFO     | app.agent.base:run:145 - Executing step 4/6
+2026-03-05 22:26:01.608 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3699, Completion=108, Cumulative Input=807261, Cumulative Completion=48190, Total=3807, Cumulative Total=855451
+2026-03-05 22:26:01.609 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:26:01.609 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:26:01.609 | INFO     | app.agent.base:run:145 - Executing step 5/6
+2026-03-05 22:28:31.821 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3859, Completion=107, Cumulative Input=811120, Cumulative Completion=48297, Total=3966, Cumulative Total=859417
+2026-03-05 22:28:31.822 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:28:31.822 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:28:31.822 | INFO     | app.agent.base:run:145 - Executing step 6/6
+2026-03-05 22:28:33.879 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4019, Completion=28, Cumulative Input=815139, Cumulative Completion=48325, Total=4047, Cumulative Total=863464
+2026-03-05 22:28:33.880 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:28:33.880 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:28:37.929 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4981, Completion=67, Cumulative Input=820120, Cumulative Completion=48392, Total=5048, Cumulative Total=868512
+2026-03-05 22:28:37.929 | INFO     | app.agent.toolcall:cleanup:387 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-05 22:28:37.929 | INFO     | app.agent.toolcall:cleanup:399 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-05 22:28:37.929 | WARNING  | app.flow.planning:_mark_step_blocked:589 - Marked step 1 as blocked in plan plan_1772720550
+2026-03-05 22:28:37.930 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-05 22:28:40.535 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3298, Completion=31, Cumulative Input=823418, Cumulative Completion=48423, Total=3329, Cumulative Total=871841
+2026-03-05 22:28:40.536 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:28:40.536 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:28:40.536 | INFO     | app.agent.base:run:145 - Executing step 2/6
+2026-03-05 22:28:41.966 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3458, Completion=31, Cumulative Input=826876, Cumulative Completion=48454, Total=3489, Cumulative Total=875330
+2026-03-05 22:28:41.966 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:28:41.966 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:28:41.966 | INFO     | app.agent.base:run:145 - Executing step 3/6
+2026-03-05 22:28:43.709 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3618, Completion=31, Cumulative Input=830494, Cumulative Completion=48485, Total=3649, Cumulative Total=878979
+2026-03-05 22:28:43.709 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:28:43.709 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:28:43.709 | INFO     | app.agent.base:run:145 - Executing step 4/6
+2026-03-05 22:28:45.010 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3778, Completion=31, Cumulative Input=834272, Cumulative Completion=48516, Total=3809, Cumulative Total=882788
+2026-03-05 22:28:45.010 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:28:45.010 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:28:45.010 | INFO     | app.agent.base:run:145 - Executing step 5/6
+2026-03-05 22:28:47.603 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3938, Completion=31, Cumulative Input=838210, Cumulative Completion=48547, Total=3969, Cumulative Total=886757
+2026-03-05 22:28:47.603 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:28:47.603 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:28:47.603 | INFO     | app.agent.base:run:145 - Executing step 6/6
+2026-03-05 22:28:49.497 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4098, Completion=31, Cumulative Input=842308, Cumulative Completion=48578, Total=4129, Cumulative Total=890886
+2026-03-05 22:28:49.498 | INFO     | app.agent.toolcall:think:138 - ✨ Manus's thoughts:
+2026-03-05 22:28:49.498 | INFO     | app.agent.toolcall:think:139 - 🛠️ Manus selected 0 tools to use
+2026-03-05 22:28:55.123 | INFO     | app.llm:update_token_count:252 - Token usage: Input=5139, Completion=118, Cumulative Input=847447, Cumulative Completion=48696, Total=5257, Cumulative Total=896143
+2026-03-05 22:28:55.123 | INFO     | app.agent.toolcall:cleanup:387 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-05 22:28:55.123 | INFO     | app.agent.toolcall:cleanup:399 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-05 22:28:55.123 | WARNING  | app.flow.planning:_mark_step_blocked:589 - Marked step 2 as blocked in plan plan_1772720550
+2026-03-05 22:28:55.124 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-05 22:28:58.057 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3587, Completion=64, Cumulative Input=851034, Cumulative Completion=48760, Total=3651, Cumulative Total=899794
+2026-03-05 22:28:58.057 | INFO     | app.agent.toolcall:think:138 - ✨ Finance's thoughts:
+2026-03-05 22:28:58.057 | INFO     | app.agent.toolcall:think:139 - 🛠️ Finance selected 0 tools to use
+2026-03-05 22:28:58.057 | INFO     | app.agent.base:run:145 - Executing step 2/6
+2026-03-05 22:29:02.445 | INFO     | app.llm:update_token_count:252 - Token usage: Input=3844, Completion=79, Cumulative Input=854878, Cumulative Completion=48839, Total=3923, Cumulative Total=903717
+2026-03-05 22:29:02.445 | INFO     | app.agent.toolcall:think:138 - ✨ Finance's thoughts:
+2026-03-05 22:29:02.445 | INFO     | app.agent.toolcall:think:139 - 🛠️ Finance selected 0 tools to use
+2026-03-05 22:29:02.445 | INFO     | app.agent.base:run:145 - Executing step 3/6
+2026-03-05 22:29:08.598 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4101, Completion=106, Cumulative Input=858979, Cumulative Completion=48945, Total=4207, Cumulative Total=907924
+2026-03-05 22:29:08.599 | INFO     | app.agent.toolcall:think:138 - ✨ Finance's thoughts:
+2026-03-05 22:29:08.599 | INFO     | app.agent.toolcall:think:139 - 🛠️ Finance selected 0 tools to use
+2026-03-05 22:29:08.599 | INFO     | app.agent.base:run:145 - Executing step 4/6
+2026-03-05 22:29:12.002 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4358, Completion=100, Cumulative Input=863337, Cumulative Completion=49045, Total=4458, Cumulative Total=912382
+2026-03-05 22:29:12.003 | INFO     | app.agent.toolcall:think:138 - ✨ Finance's thoughts:
+2026-03-05 22:29:12.003 | INFO     | app.agent.toolcall:think:139 - 🛠️ Finance selected 0 tools to use
+2026-03-05 22:29:12.003 | INFO     | app.agent.base:run:145 - Executing step 5/6
+2026-03-05 22:29:17.914 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4615, Completion=100, Cumulative Input=867952, Cumulative Completion=49145, Total=4715, Cumulative Total=917097
+2026-03-05 22:29:17.915 | INFO     | app.agent.toolcall:think:138 - ✨ Finance's thoughts:
+2026-03-05 22:29:17.915 | INFO     | app.agent.toolcall:think:139 - 🛠️ Finance selected 0 tools to use
+2026-03-05 22:29:17.915 | INFO     | app.agent.base:run:145 - Executing step 6/6
+2026-03-05 22:29:23.979 | INFO     | app.llm:update_token_count:252 - Token usage: Input=4872, Completion=100, Cumulative Input=872824, Cumulative Completion=49245, Total=4972, Cumulative Total=922069
+2026-03-05 22:29:23.979 | INFO     | app.agent.toolcall:think:138 - ✨ Finance's thoughts:
+2026-03-05 22:29:23.979 | INFO     | app.agent.toolcall:think:139 - 🛠️ Finance selected 0 tools to use
+2026-03-05 22:29:28.826 | INFO     | app.llm:update_token_count:252 - Token usage: Input=5945, Completion=67, Cumulative Input=878769, Cumulative Completion=49312, Total=6012, Cumulative Total=928081
+2026-03-05 22:29:28.826 | INFO     | app.agent.toolcall:cleanup:387 - 🧹 Cleaning up resources for agent 'Finance'...
+2026-03-05 22:29:28.827 | INFO     | app.agent.toolcall:cleanup:399 - ✨ Cleanup complete for agent 'Finance'.
+2026-03-05 22:29:28.827 | WARNING  | app.flow.planning:_mark_step_blocked:589 - Marked step 3 as blocked in plan plan_1772720550
+2026-03-05 22:29:32.171 | INFO     | app.llm:update_token_count:252 - Token usage: Input=2056, Completion=54, Cumulative Input=880825, Cumulative Completion=49366, Total=2110, Cumulative Total=930191

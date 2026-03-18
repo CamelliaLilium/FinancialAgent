@@ -1,0 +1,61 @@
+2026-03-02 23:48:13.108 | INFO     | app.flow.planning:_create_initial_plan:210 - Creating initial plan with ID: plan_1772466493
+2026-03-02 23:48:13.108 | INFO     | app.agent.base:run:145 - Executing step 1/12
+2026-03-02 23:48:19.635 | INFO     | app.llm:update_token_count:251 - Token usage: Input=1093, Completion=132, Cumulative Input=5345145, Cumulative Completion=226323, Total=1225, Cumulative Total=5571468
+2026-03-02 23:48:19.636 | INFO     | app.agent.toolcall:think:135 - ✨ Planning's thoughts:
+2026-03-02 23:48:19.636 | INFO     | app.agent.toolcall:think:136 - 🛠️ Planning selected 1 tools to use
+2026-03-02 23:48:19.637 | INFO     | app.agent.toolcall:think:140 - 🧰 Tools being prepared: ['planning']
+2026-03-02 23:48:19.637 | INFO     | app.agent.toolcall:think:143 - 🔧 Tool arguments: {"command": "create", "plan_id": "plan_1772466493", "title": "Analyze Central Bank Announcement for HAWKISH/DOVISH/NEUTRAL Stance", "steps": ["[manus] Analyze the sentence to determine if it indicates a tightening, easing, or even-handed stance of monetary policy.", "Classify the sentence as HAWKISH, DOVISH, or NEUTRAL based on the analysis."], "step_index": 0, "step_status": "not_started"}
+2026-03-02 23:48:19.637 | INFO     | app.agent.toolcall:execute_tool:249 - 🔧 Activating tool: 'planning'...
+2026-03-02 23:48:19.638 | INFO     | app.agent.toolcall:act:204 - 🎯 Tool 'planning' completed its mission! Result: Observed output of cmd `planning` executed:
+Plan created successfully with ID: plan_1772466493
+
+Plan: Analyze Central Bank Announcement for HAWKISH/DOVISH/NEUTRAL Stance (ID: plan_1772466493)
+================================================================================================
+
+Progress: 0/2 steps completed (0.0%)
+Status: 0 completed, 0 in progress, 0 blocked, 2 not started
+
+Steps:
+0. [ ] [manus] Analyze the sentence to determine if it indicates a tightening, easing, or even-handed stance of monetary policy.
+1. [ ] Classify the sentence as HAWKISH, DOVISH, or NEUTRAL based on the analysis.
+2026-03-02 23:48:19.638 | INFO     | app.agent.base:run:145 - Executing step 2/12
+2026-03-02 23:48:21.439 | INFO     | app.llm:update_token_count:251 - Token usage: Input=1522, Completion=18, Cumulative Input=5346667, Cumulative Completion=226341, Total=1540, Cumulative Total=5573008
+2026-03-02 23:48:21.439 | INFO     | app.agent.toolcall:think:135 - ✨ Planning's thoughts:
+2026-03-02 23:48:21.440 | INFO     | app.agent.toolcall:think:136 - 🛠️ Planning selected 1 tools to use
+2026-03-02 23:48:21.440 | INFO     | app.agent.toolcall:think:140 - 🧰 Tools being prepared: ['terminate']
+2026-03-02 23:48:21.440 | INFO     | app.agent.toolcall:think:143 - 🔧 Tool arguments: {"status": "success"}
+2026-03-02 23:48:21.440 | INFO     | app.agent.toolcall:execute_tool:249 - 🔧 Activating tool: 'terminate'...
+2026-03-02 23:48:21.440 | INFO     | app.agent.toolcall:_handle_special_tool:286 - 🏁 Special tool 'terminate' has completed the task!
+2026-03-02 23:48:21.441 | INFO     | app.agent.toolcall:act:204 - 🎯 Tool 'terminate' completed its mission! Result: Observed output of cmd `terminate` executed:
+The interaction has been completed with status: success
+2026-03-02 23:48:21.441 | INFO     | app.agent.toolcall:cleanup:300 - 🧹 Cleaning up resources for agent 'Planning'...
+2026-03-02 23:48:21.441 | INFO     | app.agent.toolcall:cleanup:312 - ✨ Cleanup complete for agent 'Planning'.
+2026-03-02 23:48:21.441 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-02 23:48:23.424 | INFO     | app.llm:update_token_count:251 - Token usage: Input=1537, Completion=18, Cumulative Input=5348204, Cumulative Completion=226359, Total=1555, Cumulative Total=5574563
+2026-03-02 23:48:23.425 | INFO     | app.agent.toolcall:think:135 - ✨ Manus's thoughts:
+2026-03-02 23:48:23.425 | INFO     | app.agent.toolcall:think:136 - 🛠️ Manus selected 1 tools to use
+2026-03-02 23:48:23.426 | INFO     | app.agent.toolcall:think:140 - 🧰 Tools being prepared: ['terminate']
+2026-03-02 23:48:23.426 | INFO     | app.agent.toolcall:think:143 - 🔧 Tool arguments: {"status": "success"}
+2026-03-02 23:48:23.426 | INFO     | app.agent.toolcall:execute_tool:249 - 🔧 Activating tool: 'terminate'...
+2026-03-02 23:48:23.428 | INFO     | app.agent.toolcall:_handle_special_tool:286 - 🏁 Special tool 'terminate' has completed the task!
+2026-03-02 23:48:23.428 | INFO     | app.agent.toolcall:act:204 - 🎯 Tool 'terminate' completed its mission! Result: Observed output of cmd `terminate` executed:
+The interaction has been completed with status: success
+2026-03-02 23:48:26.732 | INFO     | app.llm:update_token_count:251 - Token usage: Input=947, Completion=74, Cumulative Input=5349151, Cumulative Completion=226433, Total=1021, Cumulative Total=5575584
+2026-03-02 23:48:26.732 | INFO     | app.agent.toolcall:cleanup:300 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-02 23:48:26.733 | INFO     | app.agent.toolcall:cleanup:312 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-02 23:48:26.733 | WARNING  | app.flow.planning:_mark_step_blocked:454 - Marked step 0 as blocked in plan plan_1772466493
+2026-03-02 23:48:26.734 | INFO     | app.agent.base:run:145 - Executing step 1/6
+2026-03-02 23:48:28.690 | INFO     | app.llm:update_token_count:251 - Token usage: Input=1612, Completion=18, Cumulative Input=5350763, Cumulative Completion=226451, Total=1630, Cumulative Total=5577214
+2026-03-02 23:48:28.691 | INFO     | app.agent.toolcall:think:135 - ✨ Manus's thoughts:
+2026-03-02 23:48:28.692 | INFO     | app.agent.toolcall:think:136 - 🛠️ Manus selected 1 tools to use
+2026-03-02 23:48:28.692 | INFO     | app.agent.toolcall:think:140 - 🧰 Tools being prepared: ['terminate']
+2026-03-02 23:48:28.693 | INFO     | app.agent.toolcall:think:143 - 🔧 Tool arguments: {"status": "success"}
+2026-03-02 23:48:28.694 | INFO     | app.agent.toolcall:execute_tool:249 - 🔧 Activating tool: 'terminate'...
+2026-03-02 23:48:28.694 | INFO     | app.agent.toolcall:_handle_special_tool:286 - 🏁 Special tool 'terminate' has completed the task!
+2026-03-02 23:48:28.694 | INFO     | app.agent.toolcall:act:204 - 🎯 Tool 'terminate' completed its mission! Result: Observed output of cmd `terminate` executed:
+The interaction has been completed with status: success
+2026-03-02 23:48:33.262 | INFO     | app.llm:update_token_count:251 - Token usage: Input=1097, Completion=50, Cumulative Input=5351860, Cumulative Completion=226501, Total=1147, Cumulative Total=5578361
+2026-03-02 23:48:33.263 | INFO     | app.agent.toolcall:cleanup:300 - 🧹 Cleaning up resources for agent 'Manus'...
+2026-03-02 23:48:33.263 | INFO     | app.agent.toolcall:cleanup:312 - ✨ Cleanup complete for agent 'Manus'.
+2026-03-02 23:48:33.263 | WARNING  | app.flow.planning:_mark_step_blocked:454 - Marked step 1 as blocked in plan plan_1772466493
+2026-03-02 23:48:35.894 | INFO     | app.llm:update_token_count:251 - Token usage: Input=327, Completion=58, Cumulative Input=5352187, Cumulative Completion=226559, Total=385, Cumulative Total=5578746
