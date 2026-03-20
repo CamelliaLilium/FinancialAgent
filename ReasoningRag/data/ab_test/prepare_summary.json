@@ -1,0 +1,12 @@
+{
+  "target_count": 100,
+  "shots": 3,
+  "seed": 20260318,
+  "target_source": "finmmr_test",
+  "split_counts": {
+    "easy": 34,
+    "medium": 33,
+    "hard": 33
+  },
+  "example_pool_size": 900
+}

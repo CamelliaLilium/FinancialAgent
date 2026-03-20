@@ -1,0 +1,1 @@
+{"mode": "baseline", "target_id": "finmmr_easy-test-10", "example_ids": ["finmmr_easy-validation-129", "finmmr_easy-validation-125", "finmmr_easy-validation-215"], "gold_answer": "48007", "answer_type": "numerical", "predicted": "DRY_RUN", "correct": false, "latency_sec": 0.145, "response_text": "**Final Answer:** DRY_RUN", "error": "", "trace_id": ""}

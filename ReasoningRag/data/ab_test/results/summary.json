@@ -1,0 +1,28 @@
+{
+  "paired_count": 100,
+  "baseline_accuracy": 0.34,
+  "treatment_accuracy": 0.38,
+  "delta": 0.04,
+  "improved_count": 8,
+  "regressed_count": 4,
+  "unchanged_correct_count": 30,
+  "unchanged_wrong_count": 58,
+  "improved_ids": [
+    "finmmr_easy-test-1036",
+    "finmmr_easy-test-1142",
+    "finmmr_easy-test-780",
+    "finmmr_hard-test-452",
+    "finmmr_hard-test-560",
+    "finmmr_hard-test-802",
+    "finmmr_medium-test-465",
+    "finmmr_medium-test-875"
+  ],
+  "regressed_ids": [
+    "finmmr_easy-test-564",
+    "finmmr_easy-test-683",
+    "finmmr_hard-test-241",
+    "finmmr_medium-test-85"
+  ],
+  "model": "qwen3-vl-8b-instruct",
+  "backend": "openai"
+}

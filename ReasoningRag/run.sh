@@ -22,8 +22,16 @@ python step0_preprocess.py
 python step1_generate_trajectories.py --limit 3
 # 打印第一条 pending case 的完整 prompt
 python step1_generate_trajectories.py --dry-run
-# screen -S step1
+# step1 run full
 python step1_generate_trajectories.py --model gemini-2.5-flash --temperature 0.7
-# Ctrl+A D to detach
+# Step 1 Test
+python run_qwen_ab_test.py --backend openai
 
-python run_qwen_ab_test.py --backend openai --api-base http://localhost:8000/v1 --api-key dummy --model Qwen3-VL-8B-Instruct
+python ReasoningRag/step2_judge.py --data-dir ReasoningRag/data --resume
+python ReasoningRag/step3_extract_memories.py --data-dir ReasoningRag/data --resume
+python ReasoningRag/step4_build_index.py --data-dir ReasoningRag/data --embed-model-path ReasoningRag/NV-Embed-v2
+
+python ReasoningRag/step2_judge.py --data-dir ReasoningRag/data --limit 50
+python ReasoningRag/step3_extract_memories.py --data-dir ReasoningRag/data --resume
+python ReasoningRag/step4_build_index.py --data-dir ReasoningRag/data --embed-model-path ReasoningRag/NV-Embed-v2
+
