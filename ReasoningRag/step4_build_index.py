@@ -8,6 +8,7 @@ Usage:
 """
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -15,7 +16,6 @@ from pathlib import Path
 import faiss
 import numpy as np
 import torch
-from transformers import AutoModel
 
 
 ROOT = Path(__file__).resolve().parent
@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--index-file", default="index.faiss")
     p.add_argument("--index-meta-file", default="index_meta.json")
     p.add_argument("--embed-model-path", type=Path, default=ROOT / "NV-Embed-v2")
+    p.add_argument("--embed-backend", choices=["nvembed", "hash"], default="nvembed")
     p.add_argument("--batch-size", type=int, default=8)
     p.add_argument("--max-length", type=int, default=512)
     return p.parse_args()
@@ -61,6 +62,27 @@ def write_json(path: Path, obj) -> None:
 def make_experience_id(source_question_id: str) -> str:
     clean = re.sub(r"[^a-zA-Z0-9_\-]", "_", source_question_id)
     return f"exp_{clean}"
+
+
+def patch_nvembed_config_paths(model_path: Path) -> None:
+    config_path = model_path / "config.json"
+    with open(config_path, encoding="utf-8") as f:
+        config = json.load(f)
+
+    local_path = str(model_path.resolve())
+    changed = False
+    if config.get("_name_or_path") != local_path:
+        config["_name_or_path"] = local_path
+        changed = True
+
+    text_config = config.get("text_config")
+    if isinstance(text_config, dict) and text_config.get("_name_or_path") != local_path:
+        text_config["_name_or_path"] = local_path
+        changed = True
+
+    if changed:
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
 
 
 def build_reasoningbank(
@@ -124,30 +146,35 @@ def build_reasoningbank(
 
 def load_nvembed(model_path: Path):
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    dtype = torch.float16 if device == "cuda" else torch.float32
-    model = AutoModel.from_pretrained(str(model_path), trust_remote_code=True, torch_dtype=dtype)
+    from sentence_transformers import SentenceTransformer
+
+    model_path = model_path.resolve()
+    patch_nvembed_config_paths(model_path)
+    model = SentenceTransformer(str(model_path), trust_remote_code=True, device="cpu")
     if device == "cuda":
         model = model.half()
     model = model.to(device)
-    model.eval()
+    model.max_seq_length = 32768
+    if getattr(model, "tokenizer", None) is not None:
+        model.tokenizer.padding_side = "right"
     return model, device
 
 
 def encode_queries(model, texts: list[str], batch_size: int, max_length: int) -> np.ndarray:
-    vectors = []
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i : i + batch_size]
-        emb = model.encode(batch, instruction=QUERY_INSTRUCTION, max_length=max_length)
-        if isinstance(emb, torch.Tensor):
-            emb = emb.detach().cpu().float().numpy()
-        emb = emb.astype(np.float32)
-        norms = np.linalg.norm(emb, axis=1, keepdims=True)
-        norms = np.where(norms == 0, 1.0, norms)
-        emb = emb / norms
-        vectors.append(emb)
-        print(f"Encoded {min(i + batch_size, len(texts))}/{len(texts)}")
-
-    return np.vstack(vectors)
+    eos = ""
+    if getattr(model, "tokenizer", None) is not None:
+        eos = model.tokenizer.eos_token or ""
+    prepared = [text + eos for text in texts]
+    prompt = f"Instruct: {QUERY_INSTRUCTION}\nQuery: "
+    emb = model.encode(
+        prepared,
+        batch_size=batch_size,
+        prompt=prompt,
+        normalize_embeddings=True,
+        convert_to_numpy=True,
+        show_progress_bar=True,
+    )
+    return emb.astype(np.float32)
 
 
 def build_faiss_index(vectors: np.ndarray) -> faiss.IndexFlatIP:
@@ -155,6 +182,26 @@ def build_faiss_index(vectors: np.ndarray) -> faiss.IndexFlatIP:
     index = faiss.IndexFlatIP(dim)
     index.add(vectors)
     return index
+
+
+TOKEN_RE = re.compile(r"[\w\.%-]+", re.UNICODE)
+
+
+def encode_queries_hash(texts: list[str], dim: int = 512) -> np.ndarray:
+    vectors = np.zeros((len(texts), dim), dtype=np.float32)
+    for row_idx, text in enumerate(texts):
+        tokens = TOKEN_RE.findall((text or "").lower())
+        if not tokens:
+            continue
+        for tok in tokens:
+            digest = hashlib.md5(tok.encode("utf-8")).hexdigest()
+            col = int(digest[:8], 16) % dim
+            sign = 1.0 if int(digest[8:10], 16) % 2 == 0 else -1.0
+            vectors[row_idx, col] += sign
+        norm = np.linalg.norm(vectors[row_idx])
+        if norm > 0:
+            vectors[row_idx] /= norm
+    return vectors
 
 
 def main() -> None:
@@ -188,11 +235,16 @@ def main() -> None:
     print(f"Built experiences: {len(experiences)}")
     write_json(bank_path, experiences)
 
-    model, device = load_nvembed(args.embed_model_path)
-    print(f"NV-Embed-v2 loaded on {device}")
-
     queries = [exp["query"] for exp in experiences]
-    vectors = encode_queries(model, queries, batch_size=args.batch_size, max_length=args.max_length)
+    if args.embed_backend == "nvembed":
+        model, device = load_nvembed(args.embed_model_path)
+        print(f"NV-Embed-v2 loaded on {device}")
+        vectors = encode_queries(model, queries, batch_size=args.batch_size, max_length=args.max_length)
+        embedding_model = "NV-Embed-v2"
+    else:
+        print("Using hash embedding backend for local smoke/development testing")
+        vectors = encode_queries_hash(queries)
+        embedding_model = "hash-v1"
 
     index = build_faiss_index(vectors)
     faiss.write_index(index, str(index_path))
@@ -212,8 +264,8 @@ def main() -> None:
     index_meta = {
         "version": "v1",
         "retrieval_unit": "experience",
-        "embedding_model": "NV-Embed-v2",
-        "query_instruction": QUERY_INSTRUCTION,
+        "embedding_model": embedding_model,
+        "query_instruction": QUERY_INSTRUCTION if args.embed_backend == "nvembed" else "",
         "corpus_instruction": CORPUS_INSTRUCTION,
         "vector_dim": int(vectors.shape[1]),
         "metric": "inner_product",

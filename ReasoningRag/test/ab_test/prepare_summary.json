@@ -1,0 +1,20 @@
+{
+  "dataset_name": "bizbench",
+  "target_count": 300,
+  "shots": 3,
+  "seed": 20260323,
+  "target_source": "bizbench_test",
+  "split_counts": {
+    "CodeFinQA": 66,
+    "CodeTAT-QA": 16,
+    "ConvFinQA": 39,
+    "FinCode": 2,
+    "FinKnow": 43,
+    "FormulaEval": 1,
+    "SEC-NUM": 127,
+    "TAT-QA": 6
+  },
+  "example_pool_size": 423,
+  "only_success_trajectory": true,
+  "leakage_check": "question"
+}

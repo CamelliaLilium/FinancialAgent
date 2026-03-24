@@ -45,9 +45,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--trajectories-file", default="trajectories.jsonl")
     p.add_argument("--labels-file", default="labels.jsonl")
     p.add_argument("--items-file", default="items.jsonl")
+    p.add_argument("--progress-file", default="extract_progress.jsonl")
     p.add_argument("--model", default="gemini-2.5-flash")
     p.add_argument("--temperature", type=float, default=1.0)
     p.add_argument("--api-base-url", default="https://aihubmix.com/gemini")
+    p.add_argument("--api-key-env", default="AIHUBMIX_API_KEY")
     p.add_argument("--max-retries", type=int, default=3)
     p.add_argument("--backoff-base", type=float, default=2.0)
     p.add_argument("--limit", type=int, default=0)
@@ -72,9 +74,20 @@ def load_done_source_ids(path: Path) -> set[str]:
         return done
     for row in read_jsonl(path):
         sid = row.get("source_question_id")
-        if sid:
+        if sid and row.get("status") in {"done", "empty", "error"}:
             done.add(sid)
     return done
+
+
+def write_progress_record(handle, source_question_id: str, status: str, item_count: int, note: str = "") -> None:
+    record = {
+        "source_question_id": source_question_id,
+        "status": status,
+        "item_count": item_count,
+        "note": note[:300],
+    }
+    handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+    handle.flush()
 
 
 def trim_text(text: str, limit: int) -> str:
@@ -236,12 +249,13 @@ def main() -> None:
     traj_path = args.data_dir / args.trajectories_file
     labels_path = args.data_dir / args.labels_file
     items_path = args.data_dir / args.items_file
+    progress_path = args.data_dir / args.progress_file
 
     cases = {row["id"]: row for row in read_jsonl(cases_path)}
     trajectories = {row["id"]: row for row in read_jsonl(traj_path)}
     labels = read_jsonl(labels_path)
 
-    done_ids = load_done_source_ids(items_path) if args.resume else set()
+    done_ids = load_done_source_ids(progress_path) if args.resume else set()
     pending = [row for row in labels if row.get("id") in cases and row.get("id") in trajectories and row.get("id") not in done_ids]
     if args.limit:
         pending = pending[:args.limit]
@@ -251,9 +265,9 @@ def main() -> None:
         print("Nothing to do.")
         return
 
-    api_key = os.getenv("AIHUBMIX_API_KEY", "")
+    api_key = os.getenv(args.api_key_env, "")
     if not api_key:
-        raise RuntimeError("Missing API key. Set AIHUBMIX_API_KEY in .env (ReasoningRag/.env).")
+        raise RuntimeError(f"Missing API key env var: {args.api_key_env}")
 
     client = genai.Client(
         api_key=api_key,
@@ -263,9 +277,10 @@ def main() -> None:
     open_mode = "a" if args.resume else "w"
     total_items = 0
     empty_cases = 0
+    error_cases = 0
     started = time.time()
 
-    with open(items_path, open_mode, encoding="utf-8") as out:
+    with open(items_path, open_mode, encoding="utf-8") as out, open(progress_path, open_mode, encoding="utf-8") as progress_out:
         for i, label in enumerate(pending, start=1):
             cid = label["id"]
             case = cases[cid]
@@ -283,13 +298,16 @@ def main() -> None:
                 backoff_base=args.backoff_base,
             )
 
-            if raw.startswith("ERROR:"):
+            had_error = raw.startswith("ERROR:")
+            if had_error:
                 parsed = []
             else:
                 parsed = parse_memory_markdown(raw, is_failure=is_failure)
 
             if not parsed:
                 empty_cases += 1
+                if had_error:
+                    error_cases += 1
 
             calc_type = case.get("calc_type")
             if not isinstance(calc_type, list):
@@ -315,16 +333,21 @@ def main() -> None:
 
             out.flush()
 
+            progress_status = "done" if parsed else ("error" if had_error else "empty")
+            progress_note = raw[:300] if had_error else ""
+            write_progress_record(progress_out, cid, progress_status, len(parsed), progress_note)
+
             if i % args.progress_interval == 0 or i == len(pending):
                 elapsed = time.time() - started
                 rate = i / elapsed if elapsed > 0 else 0.0
                 print(
-                    f"[{i}/{len(pending)}] items={total_items}, empty_cases={empty_cases}, rate={rate:.1f}/s"
+                    f"[{i}/{len(pending)}] items={total_items}, empty_cases={empty_cases}, error_cases={error_cases}, rate={rate:.1f}/s"
                 )
 
     print("Done.")
     print(f"Output: {items_path}")
-    print(f"cases={len(pending)}, items={total_items}, empty_cases={empty_cases}")
+    print(f"Progress: {progress_path}")
+    print(f"cases={len(pending)}, items={total_items}, empty_cases={empty_cases}, error_cases={error_cases}")
 
 
 if __name__ == "__main__":

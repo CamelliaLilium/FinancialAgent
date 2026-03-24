@@ -1,0 +1,44 @@
+{
+  "model": "qwen3-vl-8b-instruct",
+  "backend": "openai",
+  "comparisons": {
+    "treatment_vs_baseline": {
+      "paired_count": 80,
+      "baseline_accuracy": 0.4625,
+      "treatment_accuracy": 0.425,
+      "delta": -0.0375,
+      "improved_count": 1,
+      "regressed_count": 4,
+      "unchanged_correct_count": 33,
+      "unchanged_wrong_count": 42,
+      "sign_test_p_value": 0.375,
+      "improved_ids": [
+        "bizbench_test_38"
+      ],
+      "regressed_ids": [
+        "bizbench_test_35",
+        "bizbench_test_47",
+        "bizbench_test_7",
+        "bizbench_test_78"
+      ]
+    }
+  },
+  "paired_count": 80,
+  "baseline_accuracy": 0.4625,
+  "treatment_accuracy": 0.425,
+  "delta": -0.0375,
+  "improved_count": 1,
+  "regressed_count": 4,
+  "unchanged_correct_count": 33,
+  "unchanged_wrong_count": 42,
+  "sign_test_p_value": 0.375,
+  "improved_ids": [
+    "bizbench_test_38"
+  ],
+  "regressed_ids": [
+    "bizbench_test_35",
+    "bizbench_test_47",
+    "bizbench_test_7",
+    "bizbench_test_78"
+  ]
+}

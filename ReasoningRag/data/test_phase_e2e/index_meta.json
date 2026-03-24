@@ -1,0 +1,1 @@
+{"version": "v1", "retrieval_unit": "experience", "embedding_model": "hash-v1", "query_instruction": "", "corpus_instruction": "", "vector_dim": 512, "metric": "inner_product", "normalized": true, "total_experiences": 1, "rows": [{"faiss_row": 0, "experience_id": "exp_finmme_5561", "source_question_id": "finmme_5561", "answer_type": "mcq", "calc_type": ["reasoning"]}]}

@@ -7,3 +7,6 @@ datasets/
 # NV-Embed-v2: model files exceed GitHub LFS 2GB/file limit
 ReasoningRag/NV-Embed-v2/
 ReasoningRag/backup/
+# Python cache
+__pycache__/
+*.pyc

@@ -15,11 +15,13 @@ import re
 import time
 from pathlib import Path
 
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
 
 ROOT = Path(__file__).resolve().parent
+load_dotenv(ROOT / ".env")
 
 
 def parse_args() -> argparse.Namespace:

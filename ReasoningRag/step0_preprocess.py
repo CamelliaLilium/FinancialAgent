@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Step 0 — Preprocess FinMMR + FinMME + FinTMM into unified cases.jsonl.
+Step 0 — Preprocess FinMMR + FinMME + FinTMM + BizBench into unified cases.jsonl.
 
 Usage:
     python step0_preprocess.py                          # full run with defaults
@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parent
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Preprocess FinMMR + FinMME + FinTMM → unified cases.jsonl",
+        description="Preprocess FinMMR + FinMME + FinTMM + BizBench -> unified cases.jsonl",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -69,6 +69,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--news-text-truncate", type=int, default=500,
                    help="max characters to keep from News text")
 
+    # ── BizBench ──
+    p.add_argument("--bizbench-file", default="bizbench_train.json",
+                   help="BizBench JSON filename inside --raw-dir")
+
     return p.parse_args()
 
 
@@ -96,6 +100,18 @@ def classify_answer_type_fintmm(answer: str) -> str:
         return "boolean"
     if _parse_float(answer) is not None:
         return "numerical"
+    return "free_text"
+
+
+def classify_answer_type_generic(answer: str, options=None) -> str:
+    a = (answer or "").strip()
+    lowered = a.lower()
+    if lowered in ("yes", "no", "true", "false"):
+        return "boolean"
+    if _parse_float(a) is not None:
+        return "numerical"
+    if options and len(a) == 1 and a.upper() in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+        return "mcq"
     return "free_text"
 
 
@@ -132,6 +148,42 @@ def derive_calc_type_finmme(question_type: str, unit: str) -> list[str]:
     if any(kw in (unit or "").lower() for kw in ratio_keywords):
         return ["ratio"]
     return ["arithmetic"]
+
+
+def derive_calc_type_program(program: str | None, task: str, question: str, answer_type: str) -> list[str]:
+    if answer_type != "numerical":
+        return ["reasoning"]
+
+    text = f"{question} {task}".lower()
+    ratio_keywords = ("percent", "percentage", "ratio", "rate", "margin", "yield", "growth")
+    has_ratio_words = any(kw in text for kw in ratio_keywords)
+
+    if not program:
+        if task == "SEC-NUM":
+            return ["extraction"]
+        return ["ratio"] if has_ratio_words else ["arithmetic"]
+
+    ops = {
+        "+": program.count("+"),
+        "-": program.count("-"),
+        "*": program.count("*"),
+        "/": program.count("/"),
+        "%": program.count("%"),
+        "**": program.count("**"),
+    }
+    tags = []
+    total_ops = ops["+"] + ops["-"] + ops["*"] + ops["/"] + ops["%"]
+    if ops["**"] > 0:
+        tags.append("compound")
+    if ops["/"] > 0 or ops["%"] > 0 or has_ratio_words:
+        tags.append("ratio")
+    if (ops["+"] > 0 or ops["-"] > 0 or ops["*"] > 0) and "ratio" not in tags and "compound" not in tags:
+        tags.append("arithmetic")
+    if not tags:
+        tags.append("extraction")
+    if total_ops >= 3 or ops["**"] > 0:
+        tags.append("multi_step")
+    return tags
 
 
 # ---------------------------------------------------------------------------
@@ -393,6 +445,50 @@ def process_fintmm(args: argparse.Namespace) -> list[dict]:
     return records
 
 
+def process_bizbench(args: argparse.Namespace) -> list[dict]:
+    path = args.raw_dir / args.bizbench_file
+    if not path.exists():
+        print(f"  [SKIP] {args.bizbench_file}")
+        return []
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    records = []
+    for idx, item in enumerate(data):
+        question = (item.get("question") or "").strip()
+        if not question:
+            continue
+
+        answer = str(item.get("answer", "")).strip()
+        options = item.get("options")
+        answer_type = classify_answer_type_generic(answer, options)
+        program = item.get("program")
+        task = str(item.get("task") or "")
+
+        records.append({
+            "id": f"bizbench_train_{idx}",
+            "source": "bizbench",
+            "image_paths": [],
+            "question": question,
+            "context": item.get("context") or "",
+            "options": options,
+            "gold_answer": answer,
+            "answer_type": answer_type,
+            "calc_type": derive_calc_type_program(program, task, question, answer_type),
+            "decimal_places": get_decimal_places(answer) if answer_type == "numerical" else None,
+            "metadata": {
+                "source_dataset": "BizBench",
+                "task": task,
+                "context_type": item.get("context_type"),
+                "program": program,
+                "tolerance": None,
+            },
+        })
+
+    print(f"  BizBench: {len(records)} records")
+    return records
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -404,14 +500,16 @@ def main():
     print("Step 0: Preprocessing datasets → cases.jsonl")
     print("=" * 60)
 
-    print("\n[1/3] Processing FinMMR...")
+    print("\n[1/4] Processing FinMMR...")
     finmmr = process_finmmr(args)
-    print("\n[2/3] Processing FinMME...")
+    print("\n[2/4] Processing FinMME...")
     finmme = process_finmme(args)
-    print("\n[3/3] Processing FinTMM...")
+    print("\n[3/4] Processing FinTMM...")
     fintmm = process_fintmm(args)
+    print("\n[4/4] Processing BizBench...")
+    bizbench = process_bizbench(args)
 
-    all_records = finmmr + finmme + fintmm
+    all_records = finmmr + finmme + fintmm + bizbench
 
     before = len(all_records)
     all_records = [r for r in all_records if "test" not in r["id"].lower()]

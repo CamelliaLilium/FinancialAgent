@@ -274,6 +274,8 @@ free_text Judge 的协议建议为：
 
 - `items.jsonl` 中保留 `calc_type` 与 `answer_type`，作为中间产物的自描述字段。
 - Step 4 组装 `reasoningbank.json` 时会忽略 memory item 上的这两个冗余字段，统一使用 experience-level metadata 作为检索过滤入口。
+- `extract_progress.jsonl` 作为 Step 3 的唯一进度文件；`--resume` 只读取该文件，不再通过 `items.jsonl` 反推完成状态。
+- 所有涉及密钥的脚本统一从本地私密 `.env` 读取静态变量；`.env` 已由仓库级 `.gitignore` 忽略，不进入版本控制。
 
 ### 5.5 Step 4：经验库与索引构建 [已实现（MVP）]
 
@@ -380,12 +382,25 @@ ReasoningRag/
 
 ## 八、当前进展
 
-当前已完成 Step 0-4 的 MVP。可稳定产出 `cases.jsonl`、`trajectories.jsonl`、`labels.jsonl`、`items.jsonl`、`reasoningbank.json`、`index.faiss` 与 `index_meta.json`。本地 `NV-Embed-v2` 已接入 experience-level 索引构建。在线 `inference.py` 仍处于设计中；论文中的在线闭环更新和 MaTTS 暂不启用。
+当前已完成 Step 0-4 的 MVP。当前可稳定产出 `cases.jsonl`、`trajectories.jsonl`、`labels.jsonl`、`items.jsonl`、`reasoningbank.json`、`index.faiss` 与 `index_meta.json`。截至本轮联调，`trajectories.jsonl` / `labels.jsonl` 已累计 2254 条，`items.jsonl` 已累计 172 条，`reasoningbank.json` / `index_meta.json` 已成功构建 2254 条 experience。
+
+索引构建说明：
+
+- **正式后端**：`NV-Embed-v2`，用于最终 experience-level semantic retrieval；当前已在 **WSL + conda `fin` 环境** 中成功加载并完成正式索引构建。
+- **开发后端**：`hash-v1`，仅用于本地 smoke / 联调测试；当宿主 Windows 环境因显卡架构、PyTorch 或显存兼容问题无法稳定加载 `NV-Embed-v2` 时，不阻塞 Step 4 与检索链路验证。
+- 已实现最小检索器 `retrieve_top1.py`：基于 `index_meta.json` 执行 `answer_type + calc_type` 过滤，再在 FAISS 上返回 top-1 experience。
+
+在线 `inference.py` 仍处于设计中；论文中的在线闭环更新和 MaTTS 暂不启用。
 
 最近一次敏捷删减决策：
 
 - 为保持轻量与低耦合，V1 从 Stage 1 hard filter 中移除 `language` / `chart_type`，仅保留 `answer_type + calc_type`。
 - `items.jsonl` 保留 `calc_type` / `answer_type` 做中间产物自描述；`reasoningbank.json` 则在 experience-level metadata 统一承载检索字段，避免在线路径重复读取与歧义。
+- Step 4 增加 `--embed-backend {nvembed,hash}`：默认仍为 `nvembed`，`hash` 仅作为本地开发 fallback，保证测试链路与正式检索后端解耦。
+- 运行脚本已拆分为 `run_small.sh` 与 `run_full.sh`；旧 `run.sh` 仅保留使用提示，不再承载具体流水线命令，避免路径混杂与重复执行。
+- 宿主 Windows 环境不再作为正式 `NV-Embed-v2` 运行环境；正式索引统一在 **WSL + `fin`** 中执行，宿主机仅保留开发与 smoke fallback。
+- 为兼容本地 `NV-Embed-v2` 目录，Step 4 在加载前会动态修正 `config.json` 中的 `_name_or_path` 到当前本地模型路径；这是模型 README 推荐的本地化修复方式。
+- 正式 `NV-Embed-v2` 路径已切换为 `SentenceTransformer` 加载方式，较 `AutoModel` 方案更贴近模型官方用法，也减少了自定义类兼容补丁。
 
 ---
 
@@ -403,4 +418,3 @@ ReasoningRag/
 - **sequential scaling**：对同一道题做多轮自检 / 精修，通过 self-refinement 产出更高质量记忆。
 
 MaTTS 的前提是“当前题产生的新记忆能够影响后续题”，因此它天然依赖在线闭环。当前 ReasoningRag 的离线静态建库方式与 MaTTS 不冲突，但不能直接复现论文中的“更多计算 -> 更好记忆 -> 更有效计算”正反馈。若后续切换到 streaming 场景，MaTTS 是最自然的下一步扩展。
-

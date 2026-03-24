@@ -2251,3 +2251,4 @@
 {"id": "finmme_4857", "status": "failure", "judge_source": "rule", "judge_reason": "|pred-gold|=126.76, tol=5"}
 {"id": "finmme_10862", "status": "failure", "judge_source": "rule", "judge_reason": "|pred-gold|=45, tol=2"}
 {"id": "finmme_7607", "status": "failure", "judge_source": "rule", "judge_reason": "|pred-gold|=19250, tol=1"}
+{"id": "finmme_5561", "status": "success", "judge_source": "rule", "judge_reason": "gold=['C'], pred=['C']"}
