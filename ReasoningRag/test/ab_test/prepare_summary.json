@@ -1,7 +1,8 @@
 {
   "dataset_name": "bizbench",
   "target_count": 300,
-  "shots": 3,
+  "shots": 5,
+  "failure_shots": 1,
   "seed": 20260323,
   "target_source": "bizbench_test",
   "split_counts": {
@@ -14,7 +15,11 @@
     "SEC-NUM": 127,
     "TAT-QA": 6
   },
-  "example_pool_size": 423,
-  "only_success_trajectory": true,
+  "example_pool_size": 680,
+  "example_pool_status": {
+    "success": 423,
+    "failure": 257
+  },
+  "only_success_trajectory": false,
   "leakage_check": "question"
 }

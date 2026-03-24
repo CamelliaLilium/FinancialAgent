@@ -55,6 +55,8 @@ def parse_args() -> argparse.Namespace:
                    help="input filename inside --data-dir")
     p.add_argument("--trajectories-file", default="trajectories.jsonl",
                    help="output filename inside --data-dir (append mode)")
+    p.add_argument("--dataset-name", default="",
+                   help="optional filter on case source, e.g. bizbench")
 
     # ── Teacher & generation ──
     p.add_argument("--teacher", choices=["gemini", "qwen"], default="gemini",
@@ -331,6 +333,8 @@ async def run(args: argparse.Namespace):
 
     with open(cases_path, encoding="utf-8") as f:
         all_cases = [json.loads(line) for line in f if line.strip()]
+    if args.dataset_name:
+        all_cases = [c for c in all_cases if c.get("source") == args.dataset_name]
     print(f"Loaded {len(all_cases)} cases from {cases_path}")
 
     done_ids = load_completed_ids(traj_path)

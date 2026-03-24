@@ -1,0 +1,109 @@
+{
+  "model": "qwen3-vl-8b-instruct",
+  "backend": "openai",
+  "comparisons": {
+    "baseline_vs_zeroshot": {
+      "paired_count": 120,
+      "zeroshot_accuracy": 0.425,
+      "baseline_accuracy": 0.45,
+      "delta": 0.025,
+      "improved_count": 8,
+      "regressed_count": 5,
+      "unchanged_correct_count": 46,
+      "unchanged_wrong_count": 61,
+      "sign_test_p_value": 0.581055,
+      "improved_ids": [
+        "bizbench_test_1",
+        "bizbench_test_103",
+        "bizbench_test_122",
+        "bizbench_test_136",
+        "bizbench_test_153",
+        "bizbench_test_158",
+        "bizbench_test_18",
+        "bizbench_test_182"
+      ],
+      "regressed_ids": [
+        "bizbench_test_116",
+        "bizbench_test_163",
+        "bizbench_test_177",
+        "bizbench_test_187",
+        "bizbench_test_200"
+      ]
+    },
+    "treatment_vs_baseline": {
+      "paired_count": 120,
+      "baseline_accuracy": 0.45,
+      "treatment_accuracy": 0.45,
+      "delta": 0.0,
+      "improved_count": 6,
+      "regressed_count": 6,
+      "unchanged_correct_count": 48,
+      "unchanged_wrong_count": 60,
+      "sign_test_p_value": 1.0,
+      "improved_ids": [
+        "bizbench_test_114",
+        "bizbench_test_116",
+        "bizbench_test_131",
+        "bizbench_test_163",
+        "bizbench_test_165",
+        "bizbench_test_178"
+      ],
+      "regressed_ids": [
+        "bizbench_test_1",
+        "bizbench_test_111",
+        "bizbench_test_122",
+        "bizbench_test_157",
+        "bizbench_test_189",
+        "bizbench_test_198"
+      ]
+    },
+    "treatment_sf_vs_baseline": {
+      "paired_count": 120,
+      "baseline_accuracy": 0.45,
+      "treatment_sf_accuracy": 0.45,
+      "delta": 0.0,
+      "improved_count": 5,
+      "regressed_count": 5,
+      "unchanged_correct_count": 49,
+      "unchanged_wrong_count": 61,
+      "sign_test_p_value": 1.0,
+      "improved_ids": [
+        "bizbench_test_121",
+        "bizbench_test_137",
+        "bizbench_test_142",
+        "bizbench_test_164",
+        "bizbench_test_177"
+      ],
+      "regressed_ids": [
+        "bizbench_test_1",
+        "bizbench_test_122",
+        "bizbench_test_152",
+        "bizbench_test_158",
+        "bizbench_test_189"
+      ]
+    }
+  },
+  "paired_count": 120,
+  "baseline_accuracy": 0.45,
+  "treatment_sf_accuracy": 0.45,
+  "delta": 0.0,
+  "improved_count": 5,
+  "regressed_count": 5,
+  "unchanged_correct_count": 49,
+  "unchanged_wrong_count": 61,
+  "sign_test_p_value": 1.0,
+  "improved_ids": [
+    "bizbench_test_121",
+    "bizbench_test_137",
+    "bizbench_test_142",
+    "bizbench_test_164",
+    "bizbench_test_177"
+  ],
+  "regressed_ids": [
+    "bizbench_test_1",
+    "bizbench_test_122",
+    "bizbench_test_152",
+    "bizbench_test_158",
+    "bizbench_test_189"
+  ]
+}
