@@ -1,0 +1,23 @@
+{
+  "modes": [
+    "baseline",
+    "treatment_op_routed"
+  ],
+  "seed": 20260324,
+  "limit": 80,
+  "baseline_k": 1,
+  "sf_success_k": 5,
+  "sf_failure_k": 1,
+  "sf_style": "guardrail",
+  "sf_repair": false,
+  "memory_strategy": "typed",
+  "memory_max_strategy": 2,
+  "memory_max_warning": 1,
+  "backend": "gemini",
+  "model": "gemini-2.5-flash",
+  "api_base": "https://aihubmix.com/gemini",
+  "api_key_env": "",
+  "temperature": 0.0,
+  "gemini_thinking_budget": 0,
+  "items_path": null
+}

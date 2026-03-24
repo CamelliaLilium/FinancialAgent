@@ -183,3 +183,49 @@
 - 如果 H1 也显示更强模型同样不受益，则应考虑完全放弃 prompt-side memory injection，转向：
   - 结构化求解（让模型走固定步骤而不是自由推理）
   - 或 fine-tuning / 检索侧改造
+
+## 6. 假设 1 验证结果：更强模型是否能吃下同一套 operator template
+
+结果目录：`ReasoningRag/test/results/h1_gemini_eff/`
+
+### Token-efficient 配置
+- backend: `gemini`，model: `gemini-2.5-flash`
+- 仅跑 2 组（`baseline` vs `treatment_op_routed`），不跑全矩阵
+- `limit=80`（先中等样本，不直接上 120/300）
+- `baseline_k=1`（少 shot）
+- `max_tokens=256`
+- `gemini_thinking_budget=0`（关闭 thinking 以减少输出消耗并避免 `MAX_TOKENS` 截断）
+- `temperature=0`, `--no-sf-repair`
+
+### Overall 结果
+
+| 组 | mode | Acc | vs Baseline Δ | improved | regressed | p |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| G0 | baseline | 0.5000 | — | — | — | — |
+| G1 | treatment_op_routed | 0.4875 | -1.25pp | 2 | 3 | 1.0 |
+
+### 按 calc_type 分组
+
+| calc_type | n | baseline | op_routed | Δ |
+| --- | ---: | ---: | ---: | ---: |
+| extraction | 33 | 0.8182 | 0.7879 | -3.03pp |
+| arithmetic | 26 | 0.3077 | 0.3462 | +3.85pp |
+| ratio | 13 | 0.1538 | 0.0769 | -7.69pp |
+| ratio+multi_step | 7 | 0.2857 | 0.2857 | +0.00pp |
+| arithmetic+multi_step | 1 | 1.0000 | 1.0000 | +0.00pp |
+
+### 结论
+
+1. **H1 未被支持（至少在当前模板与路由下）**：更强模型并未把整体效果拉成正增益，`op_routed` 仍相对 baseline 为负（`-1.25pp`）。
+
+2. **能力因素可能存在，但不是决定性因素**：相比 8B 的 `-4.17pp`（H2），Gemini 的负增益收敛到 `-1.25pp`，说明更强模型在“抗伤害”上更好；但它依然不能把该路线转为正收益。
+
+3. **提示侧注入路线仍不成立**：即使是更强模型，operator-template 注入仍在 extraction/ratio 子集产生副作用，说明问题不只是 8B 能力上限，更可能是“注入范式与任务结构不匹配”。
+
+### 后续路线更新
+
+- 结论上，H2 + H1 已形成一致证据：**继续堆 prompt-side memory injection 的 ROI 很低**。
+- 下一步应优先转向（而不是继续提示词微调）：
+  1. 结构化求解流程（先定题型，再执行固定算子）
+  2. 检索侧改造（检索“算子/公式/字段映射”而非自然语言经验）
+  3. 若仍走 self-evolution，需切换到 contrastive 生成“最小可执行规则”，并避免直接拼接到主提示

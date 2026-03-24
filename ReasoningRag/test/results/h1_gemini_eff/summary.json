@@ -1,0 +1,111 @@
+{
+  "modes": [
+    "baseline",
+    "treatment_op_routed"
+  ],
+  "treatment_op_routed_vs_baseline": {
+    "paired_count": 80,
+    "baseline_accuracy": 0.5,
+    "treatment_op_routed_accuracy": 0.4875,
+    "delta": -0.0125,
+    "improved_count": 2,
+    "regressed_count": 3,
+    "sign_test_p_value": 1.0
+  },
+  "treatment_op_routed_vs_baseline_by_calc_type": {
+    "arithmetic": {
+      "count": 26,
+      "baseline_acc": 0.3077,
+      "treatment_op_routed_acc": 0.3462,
+      "delta": 0.0385,
+      "improved": 1,
+      "regressed": 0
+    },
+    "arithmetic+multi_step": {
+      "count": 1,
+      "baseline_acc": 1.0,
+      "treatment_op_routed_acc": 1.0,
+      "delta": 0.0,
+      "improved": 0,
+      "regressed": 0
+    },
+    "extraction": {
+      "count": 33,
+      "baseline_acc": 0.8182,
+      "treatment_op_routed_acc": 0.7879,
+      "delta": -0.0303,
+      "improved": 1,
+      "regressed": 2
+    },
+    "ratio": {
+      "count": 13,
+      "baseline_acc": 0.1538,
+      "treatment_op_routed_acc": 0.0769,
+      "delta": -0.0769,
+      "improved": 0,
+      "regressed": 1
+    },
+    "ratio+multi_step": {
+      "count": 7,
+      "baseline_acc": 0.2857,
+      "treatment_op_routed_acc": 0.2857,
+      "delta": 0.0,
+      "improved": 0,
+      "regressed": 0
+    }
+  },
+  "baseline_by_calc_type": {
+    "arithmetic": {
+      "count": 26,
+      "correct": 8,
+      "accuracy": 0.3077
+    },
+    "arithmetic+multi_step": {
+      "count": 1,
+      "correct": 1,
+      "accuracy": 1.0
+    },
+    "extraction": {
+      "count": 33,
+      "correct": 27,
+      "accuracy": 0.8182
+    },
+    "ratio": {
+      "count": 13,
+      "correct": 2,
+      "accuracy": 0.1538
+    },
+    "ratio+multi_step": {
+      "count": 7,
+      "correct": 2,
+      "accuracy": 0.2857
+    }
+  },
+  "treatment_op_routed_by_calc_type": {
+    "arithmetic": {
+      "count": 26,
+      "correct": 9,
+      "accuracy": 0.3462
+    },
+    "arithmetic+multi_step": {
+      "count": 1,
+      "correct": 1,
+      "accuracy": 1.0
+    },
+    "extraction": {
+      "count": 33,
+      "correct": 26,
+      "accuracy": 0.7879
+    },
+    "ratio": {
+      "count": 13,
+      "correct": 1,
+      "accuracy": 0.0769
+    },
+    "ratio+multi_step": {
+      "count": 7,
+      "correct": 2,
+      "accuracy": 0.2857
+    }
+  }
+}

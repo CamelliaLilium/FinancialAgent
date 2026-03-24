@@ -15,6 +15,12 @@ try:
 except ImportError as exc:
     raise RuntimeError("Missing dependency `openai`. Install with `pip install openai`.") from exc
 
+try:
+    from google import genai
+    from google.genai import types
+except ImportError as exc:
+    raise RuntimeError("Missing dependency `google-genai`. Install with `pip install google-genai`.") from exc
+
 
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
@@ -33,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--output-dir", type=Path, required=True)
     p.add_argument("--mode", choices=[
         "all", "baseline", "treatment_sf", "zeroshot",
-        "treatment_op", "treatment_op_routed", "h2",
+        "treatment_op", "treatment_op_routed", "h2", "h1",
     ], default="all")
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--seed", type=int, default=20260324)
@@ -46,10 +52,14 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--memory-max-strategy", type=int, default=2)
     p.add_argument("--memory-max-warning", type=int, default=1)
     p.add_argument("--model", default="qwen3-vl-8b-instruct")
+    p.add_argument("--backend", choices=["openai", "gemini"], default="openai")
     p.add_argument("--api-base", default="https://dashscope.aliyuncs.com/compatible-mode/v1")
+    p.add_argument("--api-key-env", default="",
+                   help="if empty, use QWEN_API_KEY for openai and AIHUBMIX_API_KEY for gemini")
     p.add_argument("--temperature", type=float, default=0.0)
     p.add_argument("--top-p", type=float, default=1.0)
     p.add_argument("--max-tokens", type=int, default=1024)
+    p.add_argument("--gemini-thinking-budget", type=int, default=0)
     p.add_argument("--request-retries", type=int, default=2)
     return p.parse_args()
 
@@ -345,29 +355,79 @@ def build_sf_user(target: dict, successes: list[dict], failures: list[dict], sty
     return f"{prompt}\n\n{memory}\n\n{build_failure_guardrails(target, failures, style)}"
 
 
-def call_chat(client: OpenAI, model: str, system_prompt: str, user_prompt: str, temperature: float, top_p: float, max_tokens: int, retries: int) -> str:
+def resolve_api_key(args: argparse.Namespace) -> str:
+    if args.api_key_env:
+        key = os.getenv(args.api_key_env, "")
+        if key:
+            return key
+    default_env = "QWEN_API_KEY" if args.backend == "openai" else "AIHUBMIX_API_KEY"
+    return os.getenv(default_env, "")
+
+
+def build_client(args: argparse.Namespace):
+    api_key = resolve_api_key(args)
+    if not api_key:
+        if args.api_key_env:
+            raise RuntimeError(f"Missing {args.api_key_env} in .env")
+        default_env = "QWEN_API_KEY" if args.backend == "openai" else "AIHUBMIX_API_KEY"
+        raise RuntimeError(f"Missing {default_env} in .env")
+
+    if args.backend == "openai":
+        return OpenAI(api_key=api_key, base_url=args.api_base)
+
+    return genai.Client(api_key=api_key, http_options={"base_url": args.api_base})
+
+
+def call_chat(
+    client,
+    backend: str,
+    model: str,
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float,
+    top_p: float,
+    max_tokens: int,
+    gemini_thinking_budget: int,
+    retries: int,
+) -> str:
     last = None
     for _ in range(retries):
         try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
+            if backend == "openai":
+                resp = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=temperature,
+                    top_p=top_p,
+                    max_tokens=max_tokens,
+                    timeout=600,
+                )
+                return resp.choices[0].message.content or ""
+
+            prompt = f"[SYSTEM]\n{system_prompt}\n\n[USER]\n{user_prompt}"
+            cfg = types.GenerateContentConfig(
                 temperature=temperature,
                 top_p=top_p,
-                max_tokens=max_tokens,
-                timeout=600,
+                max_output_tokens=max_tokens,
+                thinking_config=types.ThinkingConfig(thinking_budget=gemini_thinking_budget),
+                response_mime_type="text/plain",
             )
-            return resp.choices[0].message.content or ""
+            resp = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config=cfg,
+            )
+            return resp.text or ""
         except Exception as e:  # pylint: disable=broad-except
             last = e
             time.sleep(1.5)
     raise RuntimeError(f"chat failed: {last}")
 
 
-def maybe_repair_answer(client: OpenAI, args: argparse.Namespace, target: dict, raw_text: str, predicted: str) -> tuple[str, str]:
+def maybe_repair_answer(client, args: argparse.Namespace, target: dict, raw_text: str, predicted: str) -> tuple[str, str]:
     at = target.get("answer_type")
     if at == "numerical" and parse_float(predicted) is not None:
         return raw_text, predicted
@@ -384,19 +444,21 @@ def maybe_repair_answer(client: OpenAI, args: argparse.Namespace, target: dict, 
     )
     repaired = call_chat(
         client,
+        args.backend,
         args.model,
         "You are a strict answer formatter.",
         repair_user,
         temperature=0.0,
         top_p=1.0,
         max_tokens=128,
+        gemini_thinking_budget=args.gemini_thinking_budget,
         retries=args.request_retries,
     )
     repaired_pred = extract_final_answer(repaired)
     return repaired, repaired_pred
 
 
-def run_mode(mode: str, args: argparse.Namespace, client: OpenAI, targets: dict[str, dict], examples: dict[str, dict], manifests: list[dict], items_map: dict[str, list[dict]]) -> Path:
+def run_mode(mode: str, args: argparse.Namespace, client, targets: dict[str, dict], examples: dict[str, dict], manifests: list[dict], items_map: dict[str, list[dict]]) -> Path:
     out_path = args.output_dir / f"{mode}_results.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     rng = random.Random(args.seed)
@@ -432,12 +494,14 @@ def run_mode(mode: str, args: argparse.Namespace, client: OpenAI, targets: dict[
             try:
                 raw = call_chat(
                     client,
+                    args.backend,
                     args.model,
-                    "You are a financial reasoning expert.",
+                    "You are a financial reasoning expert. Return exactly one line: **Final Answer:** <answer>. Do not include any explanation.",
                     user,
                     args.temperature,
                     args.top_p,
                     args.max_tokens,
+                    args.gemini_thinking_budget,
                     args.request_retries,
                 )
                 pred = extract_final_answer(raw)
@@ -559,23 +623,24 @@ def dump_config(args: argparse.Namespace, modes: list[str]) -> dict:
         "memory_strategy": args.memory_strategy,
         "memory_max_strategy": args.memory_max_strategy,
         "memory_max_warning": args.memory_max_warning,
+        "backend": args.backend,
         "model": args.model,
+        "api_base": args.api_base,
+        "api_key_env": args.api_key_env,
         "temperature": args.temperature,
+        "gemini_thinking_budget": args.gemini_thinking_budget,
         "items_path": str(args.items_path) if args.items_path else None,
     }
 
 
 def main() -> None:
     args = parse_args()
-    api_key = os.getenv("QWEN_API_KEY", "")
-    if not api_key:
-        raise RuntimeError("Missing QWEN_API_KEY in .env")
 
     targets = {r["id"]: r for r in read_jsonl(args.targets_path)}
     examples = {r["id"]: r for r in read_jsonl(args.example_pool_path)}
     manifests = read_jsonl(args.manifest_path)
     items_map = build_items_map(args.items_path)
-    client = OpenAI(api_key=api_key, base_url=args.api_base)
+    client = build_client(args)
 
     manifest_meta: dict[str, tuple] = {}
     for m in manifests:
@@ -583,6 +648,8 @@ def main() -> None:
 
     if args.mode == "all":
         modes = ["zeroshot", "baseline", "treatment_sf"]
+    elif args.mode == "h1":
+        modes = ["baseline", "treatment_op_routed"]
     elif args.mode == "h2":
         modes = ["baseline", "treatment_sf", "treatment_op", "treatment_op_routed"]
     else:
