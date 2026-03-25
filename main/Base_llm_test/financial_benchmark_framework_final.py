@@ -36,6 +36,23 @@ from datetime import datetime
 from openai import OpenAI
 
 
+def _bootstrap_workspace_env() -> None:
+    import sys
+    from pathlib import Path
+
+    for d in Path(__file__).resolve().parents:
+        if (d / "workspace_env.py").is_file():
+            if str(d) not in sys.path:
+                sys.path.insert(0, str(d))
+            import workspace_env
+
+            workspace_env.load_workspace_dotenv()
+            return
+
+
+_bootstrap_workspace_env()
+
+
 def _model_to_tag(model_name: str) -> str:
     """将模型名转为安全目录/文件名"""
     tag = re.sub(r'[^a-zA-Z0-9._-]+', '_', model_name.strip())
@@ -1590,8 +1607,8 @@ def main():
                        help='要测试的模型名称，例如 Qwen/Qwen3-VL-8B-Thinking')
     parser.add_argument('--base-url', type=str, default='https://api.siliconflow.cn/v1',
                        help='API基础URL')
-    parser.add_argument('--api-key', type=str, default='sk-tjpwtwbvgdxacmsbarjyksjlcmtgmvgobpumifwyqzhvlpab',
-                       help='API密钥；为空时读取环境变量 SILICONFLOW_API_KEY')
+    parser.add_argument('--api-key', type=str, default='',
+                       help='API密钥；为空时读取环境变量 SILICONFLOW_API_KEY（见 workspace 根目录 .env）')
     parser.add_argument('--checkpoint-root', type=str, default='./checkpoints',
                        help='检查点根目录（会自动按模型分子目录）')
     parser.add_argument('--results-root', type=str, default='./results_full',

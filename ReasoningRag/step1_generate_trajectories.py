@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
-Step 1 - Generate CoT trajectories via Gemini or Qwen.
+Step 1 — Generate CoT trajectories via Gemini.
 
 Usage:
-    python step1_generate_trajectories.py                 # full run with defaults
-    python step1_generate_trajectories.py --teacher qwen # use qwen3-vl-8b-instruct
-    python step1_generate_trajectories.py --limit 5      # test with first N pending cases
-    python step1_generate_trajectories.py --dry-run      # print prompt for first case, no API call
-    python step1_generate_trajectories.py -h             # show all options
+    python step1_generate_trajectories.py              # full run with defaults
+    python step1_generate_trajectories.py --limit 5    # test with first N pending cases
+    python step1_generate_trajectories.py --dry-run    # print prompt for first case, no API call
+    python step1_generate_trajectories.py --model gemini-2.5-pro --temperature 0.3
+    python step1_generate_trajectories.py -h           # show all options
 """
 
 import argparse
 import asyncio
-import base64
 import json
 import mimetypes
 import os
@@ -25,17 +24,8 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
-
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env")
-
-GEMINI_MODEL = "gemini-2.5-flash"
-QWEN_MODEL = "qwen3-vl-8b-instruct"
-QWEN_API_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 
 # ---------------------------------------------------------------------------
@@ -44,7 +34,7 @@ QWEN_API_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Generate CoT trajectories via Gemini or Qwen",
+        description="Generate CoT trajectories via Gemini",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -55,20 +45,18 @@ def parse_args() -> argparse.Namespace:
                    help="input filename inside --data-dir")
     p.add_argument("--trajectories-file", default="trajectories.jsonl",
                    help="output filename inside --data-dir (append mode)")
-    p.add_argument("--dataset-name", default="",
-                   help="optional filter on case source, e.g. bizbench")
 
-    # ── Teacher & generation ──
-    p.add_argument("--teacher", choices=["gemini", "qwen"], default="gemini",
-                   help="teacher model provider")
+    # ── Model & generation ──
+    p.add_argument("--model", default="gemini-2.5-flash",
+                   help="Gemini model name")
     p.add_argument("--temperature", type=float, default=0.7,
                    help="sampling temperature")
     p.add_argument("--thinking-budget", type=int, default=2048,
-                   help="thinking token budget for Gemini thinking mode only")
+                   help="thinking token budget for Gemini thinking mode")
 
     # ── API ──
     p.add_argument("--api-base-url", default="https://aihubmix.com/gemini",
-                   help="Gemini-compatible API base URL (used only when --teacher gemini)")
+                   help="Gemini-compatible API base URL")
 
     # ── Concurrency & retry ──
     p.add_argument("--semaphore-limit", type=int, default=10,
@@ -155,28 +143,6 @@ def load_image_part(rel_path: str) -> types.Part | None:
     return types.Part.from_bytes(data=data, mime_type=mime or "image/png")
 
 
-def encode_image_data_url(rel_path: str) -> str | None:
-    full = ROOT / rel_path
-    if not full.is_file():
-        return None
-    mime, _ = mimetypes.guess_type(str(full))
-    with open(full, "rb") as f:
-        data = base64.b64encode(f.read()).decode("ascii")
-    return f"data:{mime or 'image/png'};base64,{data}"
-
-
-def build_qwen_user_content(case: dict) -> list[dict]:
-    content = [{"type": "text", "text": build_prompt(case)}]
-    for img_rel in case.get("image_paths", []):
-        data_url = encode_image_data_url(img_rel)
-        if data_url:
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": data_url, "detail": "auto"},
-            })
-    return content
-
-
 # ---------------------------------------------------------------------------
 # Checkpoint
 # ---------------------------------------------------------------------------
@@ -201,9 +167,9 @@ def load_completed_ids(traj_path: Path) -> set[str]:
 # ---------------------------------------------------------------------------
 
 async def process_one(
-    client,
+    client: genai.Client,
     case: dict,
-    config,
+    config: types.GenerateContentConfig,
     file_lock: asyncio.Lock,
     semaphore: asyncio.Semaphore,
     outfile,
@@ -212,15 +178,13 @@ async def process_one(
 ):
     case_id = case["id"]
 
-    contents = None
-    if args.teacher == "gemini":
-        content_parts: list[types.Part] = []
-        for img_rel in case.get("image_paths", []):
-            part = load_image_part(img_rel)
-            if part:
-                content_parts.append(part)
-        content_parts.append(types.Part.from_text(text=build_prompt(case)))
-        contents = [types.Content(role="user", parts=content_parts)]
+    content_parts: list[types.Part] = []
+    for img_rel in case.get("image_paths", []):
+        part = load_image_part(img_rel)
+        if part:
+            content_parts.append(part)
+    content_parts.append(types.Part.from_text(text=build_prompt(case)))
+    contents = [types.Content(role="user", parts=content_parts)]
 
     trajectory = ""
     predicted = ""
@@ -229,13 +193,10 @@ async def process_one(
     for attempt in range(1, args.max_retries + 1):
         try:
             async with semaphore:
-                if args.teacher == "gemini":
-                    response = await client.aio.models.generate_content(
-                        model=GEMINI_MODEL, contents=contents, config=config,
-                    )
-                    trajectory = response.text or ""
-                else:
-                    trajectory = await asyncio.to_thread(call_qwen_generate, client, case, args)
+                response = await client.aio.models.generate_content(
+                    model=args.model, contents=contents, config=config,
+                )
+            trajectory = response.text or ""
             predicted = extract_predicted(trajectory)
             break
         except Exception as e:
@@ -269,60 +230,6 @@ async def process_one(
               f"| {rate:.1f} cases/s, ETA {eta / 60:.0f}m")
 
 
-def call_qwen_generate(client, case: dict, args: argparse.Namespace) -> str:
-    if OpenAI is None:
-        raise RuntimeError("Missing dependency `openai`. Install it with `pip install openai`.")
-
-    completion = client.chat.completions.create(
-        model=QWEN_MODEL,
-        messages=[{"role": "user", "content": build_qwen_user_content(case)}],
-        temperature=args.temperature,
-        max_tokens=2048,
-        timeout=600,
-    )
-    message = completion.choices[0].message.content
-    if isinstance(message, str):
-        return message
-    if isinstance(message, list):
-        parts = []
-        for item in message:
-            if isinstance(item, dict) and item.get("type") == "text":
-                parts.append(item.get("text", ""))
-        return "\n".join(parts).strip()
-    return str(message)
-
-
-def build_client_and_config(args: argparse.Namespace):
-    if args.teacher == "gemini":
-        api_key = os.getenv("AIHUBMIX_API_KEY", "")
-        if not api_key or api_key.startswith("sk-REPLACE"):
-            print("ERROR: Set your real API key in .env (AIHUBMIX_API_KEY)")
-            sys.exit(1)
-
-        client = genai.Client(
-            api_key=api_key,
-            http_options={"base_url": args.api_base_url},
-        )
-        config = types.GenerateContentConfig(
-            temperature=args.temperature,
-            thinking_config=types.ThinkingConfig(thinking_budget=args.thinking_budget),
-            response_mime_type="text/plain",
-        )
-        return client, config
-
-    if OpenAI is None:
-        print("ERROR: Missing dependency `openai`. Install it with `pip install openai`")
-        sys.exit(1)
-
-    api_key = os.getenv("QWEN_API_KEY", "")
-    if not api_key:
-        print("ERROR: Set your real API key in .env (QWEN_API_KEY)")
-        sys.exit(1)
-
-    client = OpenAI(api_key=api_key, base_url=QWEN_API_BASE_URL)
-    return client, None
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -333,8 +240,6 @@ async def run(args: argparse.Namespace):
 
     with open(cases_path, encoding="utf-8") as f:
         all_cases = [json.loads(line) for line in f if line.strip()]
-    if args.dataset_name:
-        all_cases = [c for c in all_cases if c.get("source") == args.dataset_name]
     print(f"Loaded {len(all_cases)} cases from {cases_path}")
 
     done_ids = load_completed_ids(traj_path)
@@ -353,7 +258,20 @@ async def run(args: argparse.Namespace):
             print(build_prompt(c))
         return
 
-    client, config = build_client_and_config(args)
+    api_key = os.getenv("AIHUBMIX_API_KEY", "")
+    if not api_key or api_key.startswith("sk-REPLACE"):
+        print("ERROR: Set your real API key in .env (AIHUBMIX_API_KEY)")
+        sys.exit(1)
+
+    client = genai.Client(
+        api_key=api_key,
+        http_options={"base_url": args.api_base_url},
+    )
+    config = types.GenerateContentConfig(
+        temperature=args.temperature,
+        thinking_config=types.ThinkingConfig(thinking_budget=args.thinking_budget),
+        response_mime_type="text/plain",
+    )
 
     if not pending:
         print("Nothing to do — all cases completed.")
@@ -362,7 +280,7 @@ async def run(args: argparse.Namespace):
     semaphore = asyncio.Semaphore(args.semaphore_limit)
     file_lock = asyncio.Lock()
     progress = {"done": 0, "total": len(pending), "start": time.time()}
-    print(f"\nStarting generation: {len(pending)} cases, teacher={args.teacher}, semaphore={args.semaphore_limit}")
+    print(f"\nStarting generation: {len(pending)} cases, semaphore={args.semaphore_limit}")
 
     outfile = open(traj_path, "a", encoding="utf-8")
     try:

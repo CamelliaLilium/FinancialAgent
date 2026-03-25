@@ -17,6 +17,7 @@ RAG 效果对比测试 v2 — 多模态版
 
 import base64
 import json
+import os
 import re
 import sys
 import time
@@ -25,9 +26,24 @@ from typing import Any, Dict, List, Optional
 
 from openai import OpenAI
 
+
+def _bootstrap_workspace_env() -> None:
+    for d in Path(__file__).resolve().parents:
+        wv = d / "workspace_env.py"
+        if wv.is_file():
+            if str(d) not in sys.path:
+                sys.path.insert(0, str(d))
+            import workspace_env
+
+            workspace_env.load_workspace_dotenv()
+            return
+
+
+_bootstrap_workspace_env()
+
 # ── 配置 ──────────────────────────────────────────────────────────
-API_BASE = "https://api.siliconflow.cn/v1"
-API_KEY = "sk-tjpwtwbvgdxacmsbarjyksjlcmtgmvgobpumifwyqzhvlpab"
+API_BASE = (os.getenv("SILICONFLOW_BASE_URL") or "https://api.siliconflow.cn/v1").strip()
+API_KEY = (os.getenv("SILICONFLOW_API_KEY") or "").strip()
 MODEL = "Qwen/Qwen3-VL-8B-Instruct"
 MAX_TOKENS = 4096
 TEMPERATURE = 0.0
@@ -250,6 +266,12 @@ def main():
     print(f"Model: {MODEL}  |  API: {API_BASE}")
     print(f"RAG index: {RAG_PERSIST_DIR}")
     print("=" * 80)
+
+    if not API_KEY:
+        print(
+            "错误: 未设置 SILICONFLOW_API_KEY。请在 workspace 根目录复制 .env.example 为 .env 并填写。"
+        )
+        sys.exit(1)
 
     # 加载 retriever
     import importlib.util

@@ -1,3 +1,10 @@
 ReasoningRag/raw/finmme_train.json filter=lfs diff=lfs merge=lfs -text
 main/FinancialAgent/Dataset/finmme/finmme_test.json filter=lfs diff=lfs merge=lfs -text
 ReasoningRag/images/** filter=lfs diff=lfs merge=lfs -text
+Open-Manus/**/Dataset/**/*.json filter=lfs diff=lfs merge=lfs -text
+Open-Manus/**/*.png filter=lfs diff=lfs merge=lfs -text
+Open-Manus/**/*.log filter=lfs diff=lfs merge=lfs -text
+Open-Manus/**/benchmark_results/** filter=lfs diff=lfs merge=lfs -text
+Open-Manus/**/checkpoints/** filter=lfs diff=lfs merge=lfs -text
+Open-Manus/**/results_full/** filter=lfs diff=lfs merge=lfs -text
+Open-Manus/Base_llm_test/**/*.json filter=lfs diff=lfs merge=lfs -text
