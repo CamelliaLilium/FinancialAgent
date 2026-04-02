@@ -1,4 +1,0 @@
-2026-03-02 19:17:48,826 | INFO | openmanus | Benchmark samples: 1
-2026-03-02 19:17:48,826 | INFO | openmanus | Use planning agent: True
-2026-03-02 19:17:48,826 | INFO | openmanus | Output directory: D:\OpenManus\金融Agent\benchmark_results\finben_multi_agent_20260302_191748
-2026-03-02 19:17:48,826 | INFO | openmanus | [1/1] Running sample: fomc0

@@ -15,12 +15,6 @@ try:
 except ImportError as exc:
     raise RuntimeError("Missing dependency `openai`. Install with `pip install openai`.") from exc
 
-try:
-    from google import genai
-    from google.genai import types
-except ImportError as exc:
-    raise RuntimeError("Missing dependency `google-genai`. Install with `pip install google-genai`.") from exc
-
 
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
@@ -37,10 +31,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--items-path", type=Path, default=None,
                    help="optional extracted memory items jsonl")
     p.add_argument("--output-dir", type=Path, required=True)
-    p.add_argument("--mode", choices=[
-        "all", "baseline", "treatment_sf", "zeroshot",
-        "treatment_op", "treatment_op_routed", "h2", "h1",
-    ], default="all")
+    p.add_argument(
+        "--mode",
+        choices=["all", "baseline", "treatment_sf", "zeroshot", "h3", "treatment_h3"],
+        default="all",
+    )
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--seed", type=int, default=20260324)
     p.add_argument("--baseline-k", type=int, default=3)
@@ -51,15 +46,19 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--memory-strategy", choices=["simple", "typed"], default="typed")
     p.add_argument("--memory-max-strategy", type=int, default=2)
     p.add_argument("--memory-max-warning", type=int, default=1)
+    p.add_argument("--h3-ops-k", type=int, default=1,
+                   help="max strategy/warning operator templates in H3 mode")
+    p.add_argument("--h3-max-rule-chars", type=int, default=120,
+                   help="max chars for a single synthesized operator rule")
+    p.add_argument("--h3-iterative", action=argparse.BooleanOptionalAction, default=False,
+                   help="enable lightweight iterative operator updates during treatment_h3 run")
+    p.add_argument("--h3-history-limit", type=int, default=64,
+                   help="max number of iterative rules retained in memory")
     p.add_argument("--model", default="qwen3-vl-8b-instruct")
-    p.add_argument("--backend", choices=["openai", "gemini"], default="openai")
     p.add_argument("--api-base", default="https://dashscope.aliyuncs.com/compatible-mode/v1")
-    p.add_argument("--api-key-env", default="",
-                   help="if empty, use QWEN_API_KEY for openai and AIHUBMIX_API_KEY for gemini")
     p.add_argument("--temperature", type=float, default=0.0)
     p.add_argument("--top-p", type=float, default=1.0)
     p.add_argument("--max-tokens", type=int, default=1024)
-    p.add_argument("--gemini-thinking-budget", type=int, default=0)
     p.add_argument("--request-retries", type=int, default=2)
     return p.parse_args()
 
@@ -150,71 +149,6 @@ def answer_instruction(answer_type: str) -> str:
     if answer_type == "boolean":
         return "Output only Yes or No."
     return "Output a concise direct answer."
-
-
-# ---------------------------------------------------------------------------
-# Operator Templates (H2)
-# ---------------------------------------------------------------------------
-
-OPERATOR_TEMPLATES = {
-    "AGGREGATE": (
-        "RULE: If the table already contains a total / aggregate / sum row, "
-        "use that value directly. Do NOT re-sum the individual line items."
-    ),
-    "UNIT_SCALE": (
-        "RULE: If the table header says '(in thousands)', '(in millions)', etc., "
-        "keep the table's unit scale in your answer unless the question explicitly asks for conversion."
-    ),
-    "DIRECT_READ": (
-        "RULE: If the answer can be read directly from a single cell or field in the context, "
-        "output that exact value. Do NOT perform additional derivation or calculation."
-    ),
-    "PRECISION": (
-        "RULE: Preserve the full precision of your intermediate calculation in the final answer. "
-        "Do NOT round to a 'nice' number or convert to a casual approximation."
-    ),
-}
-
-# calc_type → ordered list of template keys to try (first applicable wins)
-CALC_TYPE_TEMPLATE_MAP: dict[tuple[str, ...], list[str]] = {
-    ("extraction",): ["DIRECT_READ", "AGGREGATE"],
-    ("arithmetic",): ["AGGREGATE", "UNIT_SCALE", "PRECISION"],
-    ("ratio",): ["AGGREGATE", "UNIT_SCALE", "PRECISION"],
-    ("ratio", "multi_step"): ["AGGREGATE", "UNIT_SCALE", "PRECISION"],
-    ("arithmetic", "multi_step"): ["AGGREGATE", "UNIT_SCALE", "PRECISION"],
-    ("reasoning",): ["PRECISION"],
-}
-
-# For unrouted mode, every target gets this single best-effort template
-DEFAULT_TEMPLATE_KEY = "PRECISION"
-
-
-def select_operator_template(calc_type: tuple[str, ...], routed: bool) -> str | None:
-    """Return a single operator-template string, or None if routing says skip."""
-    if not routed:
-        # unrouted: always inject the default
-        return OPERATOR_TEMPLATES[DEFAULT_TEMPLATE_KEY]
-
-    keys = CALC_TYPE_TEMPLATE_MAP.get(calc_type)
-    if keys:
-        return OPERATOR_TEMPLATES[keys[0]]
-    # unknown calc_type → inject nothing when routed
-    return None
-
-
-def build_op_user(target: dict, examples: list[dict], calc_type: tuple[str, ...], routed: bool) -> str:
-    """Build prompt for treatment_op / treatment_op_routed modes."""
-    prompt = build_baseline_user(target, examples)
-    rule = select_operator_template(calc_type, routed)
-    if rule is None:
-        return prompt
-    section = (
-        "=== Operator Rule (follow strictly) ===\n"
-        f"{rule}\n"
-        "Apply this rule to the target problem above. "
-        "End with exactly one line: **Final Answer:** <answer>"
-    )
-    return f"{prompt}\n\n{section}"
 
 
 def build_baseline_user(target: dict, examples: list[dict]) -> str:
@@ -341,6 +275,104 @@ def build_memory_section(
     return "\n".join(lines)
 
 
+def squash_line(text: str, max_chars: int) -> str:
+    one = re.sub(r"\s+", " ", (text or "").strip())
+    if not one:
+        return ""
+    if len(one) <= max_chars:
+        return one
+    return one[: max_chars - 3].rstrip() + "..."
+
+
+def template_from_item(item: dict, max_chars: int) -> str:
+    answer_type = item.get("answer_type") or "unknown"
+    calc_type = "+".join(item.get("calc_type") or []) or "general"
+    title = squash_line(item.get("title") or "", max_chars)
+    content = squash_line(item.get("content") or "", max_chars)
+    core = title or content
+    if not core:
+        return ""
+    return f"[{answer_type}|{calc_type}] {core}"
+
+
+def summarize_iterative_rule(target: dict, predicted: str, gold: str) -> str | None:
+    answer_type = target.get("answer_type")
+    if answer_type == "numerical":
+        g = parse_float(gold)
+        p = parse_float(predicted)
+        if p is None:
+            return "For numerical targets: output a single numeric value only, no explanation text."
+        if g is None:
+            return None
+        if abs(g - p) <= 1e-9:
+            return None
+        if abs(g - p) <= 0.1:
+            return "For numerical targets: preserve source precision and avoid extra rounding in final step."
+        return "For numerical targets: avoid re-computation if the required value is directly stated in context."
+
+    if answer_type == "boolean":
+        return "For boolean targets: answer strictly with Yes or No only."
+
+    if answer_type == "mcq":
+        return "For MCQ targets: output option letter(s) only, no additional words."
+
+    if not (predicted or "").strip():
+        return "Never leave final answer empty; always output strict final answer line."
+    return None
+
+
+def build_h3_operator_section(
+    target: dict,
+    successes: list[dict],
+    failures: list[dict],
+    items_map: dict[str, list[dict]],
+    args: argparse.Namespace,
+    iter_rules: list[str],
+) -> str:
+    strategies = pick_memory_items(
+        successes,
+        "strategy",
+        target,
+        items_map,
+        max(1, args.h3_ops_k),
+        args.memory_strategy,
+    )
+    warnings = pick_memory_items(
+        failures,
+        "warning",
+        target,
+        items_map,
+        max(1, args.h3_ops_k),
+        args.memory_strategy,
+    )
+
+    lines = ["=== H3 Contrastive Operator Memory ==="]
+    for idx, text in enumerate(strategies[: args.h3_ops_k], start=1):
+        item = {
+            "title": text,
+            "content": text,
+            "answer_type": target.get("answer_type"),
+            "calc_type": target.get("calc_type") or [],
+        }
+        lines.append(f"- OP{idx} Prefer: {template_from_item(item, args.h3_max_rule_chars)}")
+    for idx, text in enumerate(warnings[: args.h3_ops_k], start=1):
+        item = {
+            "title": text,
+            "content": text,
+            "answer_type": target.get("answer_type"),
+            "calc_type": target.get("calc_type") or [],
+        }
+        lines.append(f"- OP{idx} Avoid: {template_from_item(item, args.h3_max_rule_chars)}")
+
+    if iter_rules:
+        for i, rule in enumerate(iter_rules[-args.h3_ops_k:], start=1):
+            lines.append(f"- OP-Iter{i}: {squash_line(rule, args.h3_max_rule_chars)}")
+
+    lines.append("- Execute exactly one best-matching operator; do not narrate reasoning.")
+    lines.append("- If target contains direct value, prefer extraction over recomputation.")
+    return "\n".join(lines)
+
+
 def build_sf_user(target: dict, successes: list[dict], failures: list[dict], style: str, items_map: dict[str, list[dict]], args: argparse.Namespace) -> str:
     prompt = build_baseline_user(target, successes)
     memory = build_memory_section(
@@ -355,79 +387,47 @@ def build_sf_user(target: dict, successes: list[dict], failures: list[dict], sty
     return f"{prompt}\n\n{memory}\n\n{build_failure_guardrails(target, failures, style)}"
 
 
-def resolve_api_key(args: argparse.Namespace) -> str:
-    if args.api_key_env:
-        key = os.getenv(args.api_key_env, "")
-        if key:
-            return key
-    default_env = "QWEN_API_KEY" if args.backend == "openai" else "AIHUBMIX_API_KEY"
-    return os.getenv(default_env, "")
-
-
-def build_client(args: argparse.Namespace):
-    api_key = resolve_api_key(args)
-    if not api_key:
-        if args.api_key_env:
-            raise RuntimeError(f"Missing {args.api_key_env} in .env")
-        default_env = "QWEN_API_KEY" if args.backend == "openai" else "AIHUBMIX_API_KEY"
-        raise RuntimeError(f"Missing {default_env} in .env")
-
-    if args.backend == "openai":
-        return OpenAI(api_key=api_key, base_url=args.api_base)
-
-    return genai.Client(api_key=api_key, http_options={"base_url": args.api_base})
-
-
-def call_chat(
-    client,
-    backend: str,
-    model: str,
-    system_prompt: str,
-    user_prompt: str,
-    temperature: float,
-    top_p: float,
-    max_tokens: int,
-    gemini_thinking_budget: int,
-    retries: int,
+def build_h3_user(
+    target: dict,
+    successes: list[dict],
+    failures: list[dict],
+    items_map: dict[str, list[dict]],
+    args: argparse.Namespace,
+    iter_rules: list[str],
 ) -> str:
+    prompt = build_baseline_user(target, successes)
+    op_mem = build_h3_operator_section(target, successes, failures, items_map, args, iter_rules)
+    extra = (
+        "=== Output Contract ===\n"
+        "- Return exactly one line: **Final Answer:** <answer>\n"
+        "- No chain-of-thought, no extra explanation."
+    )
+    return f"{prompt}\n\n{op_mem}\n\n{extra}"
+
+
+def call_chat(client: OpenAI, model: str, system_prompt: str, user_prompt: str, temperature: float, top_p: float, max_tokens: int, retries: int) -> str:
     last = None
     for _ in range(retries):
         try:
-            if backend == "openai":
-                resp = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    temperature=temperature,
-                    top_p=top_p,
-                    max_tokens=max_tokens,
-                    timeout=600,
-                )
-                return resp.choices[0].message.content or ""
-
-            prompt = f"[SYSTEM]\n{system_prompt}\n\n[USER]\n{user_prompt}"
-            cfg = types.GenerateContentConfig(
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
                 temperature=temperature,
                 top_p=top_p,
-                max_output_tokens=max_tokens,
-                thinking_config=types.ThinkingConfig(thinking_budget=gemini_thinking_budget),
-                response_mime_type="text/plain",
+                max_tokens=max_tokens,
+                timeout=600,
             )
-            resp = client.models.generate_content(
-                model=model,
-                contents=prompt,
-                config=cfg,
-            )
-            return resp.text or ""
+            return resp.choices[0].message.content or ""
         except Exception as e:  # pylint: disable=broad-except
             last = e
             time.sleep(1.5)
     raise RuntimeError(f"chat failed: {last}")
 
 
-def maybe_repair_answer(client, args: argparse.Namespace, target: dict, raw_text: str, predicted: str) -> tuple[str, str]:
+def maybe_repair_answer(client: OpenAI, args: argparse.Namespace, target: dict, raw_text: str, predicted: str) -> tuple[str, str]:
     at = target.get("answer_type")
     if at == "numerical" and parse_float(predicted) is not None:
         return raw_text, predicted
@@ -444,21 +444,27 @@ def maybe_repair_answer(client, args: argparse.Namespace, target: dict, raw_text
     )
     repaired = call_chat(
         client,
-        args.backend,
         args.model,
         "You are a strict answer formatter.",
         repair_user,
         temperature=0.0,
         top_p=1.0,
         max_tokens=128,
-        gemini_thinking_budget=args.gemini_thinking_budget,
         retries=args.request_retries,
     )
     repaired_pred = extract_final_answer(repaired)
     return repaired, repaired_pred
 
 
-def run_mode(mode: str, args: argparse.Namespace, client, targets: dict[str, dict], examples: dict[str, dict], manifests: list[dict], items_map: dict[str, list[dict]]) -> Path:
+def run_mode(
+    mode: str,
+    args: argparse.Namespace,
+    client: OpenAI,
+    targets: dict[str, dict],
+    examples: dict[str, dict],
+    manifests: list[dict],
+    items_map: dict[str, list[dict]],
+) -> Path:
     out_path = args.output_dir / f"{mode}_results.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     rng = random.Random(args.seed)
@@ -466,6 +472,8 @@ def run_mode(mode: str, args: argparse.Namespace, client, targets: dict[str, dic
     rng.shuffle(ordered)
     if args.limit:
         ordered = ordered[:args.limit]
+
+    iter_rules: list[str] = []
 
     with open(out_path, "w", encoding="utf-8") as out:
         for idx, m in enumerate(ordered, start=1):
@@ -477,15 +485,12 @@ def run_mode(mode: str, args: argparse.Namespace, client, targets: dict[str, dic
             succ = [examples[x] for x in sids if x in examples][: args.sf_success_k]
             fail = [examples[x] for x in fids if x in examples][: args.sf_failure_k]
 
-            calc_type = tuple(target.get("calc_type") or [])
-
             if mode == "zeroshot":
                 user = build_baseline_user(target, [])
             elif mode == "baseline":
                 user = build_baseline_user(target, succ[: args.baseline_k])
-            elif mode in ("treatment_op", "treatment_op_routed"):
-                routed = mode == "treatment_op_routed"
-                user = build_op_user(target, succ[: args.baseline_k], calc_type, routed)
+            elif mode in {"h3", "treatment_h3"}:
+                user = build_h3_user(target, succ, fail, items_map, args, iter_rules)
             else:
                 user = build_sf_user(target, succ, fail, args.sf_style, items_map, args)
 
@@ -494,22 +499,27 @@ def run_mode(mode: str, args: argparse.Namespace, client, targets: dict[str, dic
             try:
                 raw = call_chat(
                     client,
-                    args.backend,
                     args.model,
-                    "You are a financial reasoning expert. Return exactly one line: **Final Answer:** <answer>. Do not include any explanation.",
+                    "You are a financial reasoning expert.",
                     user,
                     args.temperature,
                     args.top_p,
                     args.max_tokens,
-                    args.gemini_thinking_budget,
                     args.request_retries,
                 )
                 pred = extract_final_answer(raw)
-                if mode == "treatment_sf" and args.sf_repair:
+                if mode in {"treatment_sf", "h3", "treatment_h3"} and args.sf_repair:
                     raw2, pred2 = maybe_repair_answer(client, args, target, raw, pred)
                     raw = raw2
                     pred = pred2
                 ok = is_correct(target, pred)
+
+                if mode in {"h3", "treatment_h3"} and args.h3_iterative and not ok:
+                    rule = summarize_iterative_rule(target, pred, target.get("gold_answer", ""))
+                    if rule and rule not in iter_rules:
+                        iter_rules.append(rule)
+                        if len(iter_rules) > args.h3_history_limit:
+                            iter_rules = iter_rules[-args.h3_history_limit :]
             except Exception as e:  # pylint: disable=broad-except
                 raw = ""
                 pred = ""
@@ -522,12 +532,15 @@ def run_mode(mode: str, args: argparse.Namespace, client, targets: dict[str, dic
                 "predicted": pred,
                 "gold_answer": target.get("gold_answer", ""),
                 "answer_type": target.get("answer_type", ""),
-                "calc_type": list(calc_type),
                 "correct": ok,
                 "latency_sec": round(time.time() - started, 3),
                 "error": error,
                 "response_text": raw,
+                "prompt_chars": len(user),
+                "calc_type": target.get("calc_type", []),
             }
+            if mode in {"h3", "treatment_h3"}:
+                rec["h3_iter_rules_count"] = len(iter_rules)
             out.write(json.dumps(rec, ensure_ascii=False) + "\n")
             out.flush()
             print(f"[{mode} {idx}/{len(ordered)}] {target['id']} -> {pred!r} | correct={ok}")
@@ -567,118 +580,48 @@ def pair_summary(a_rows: dict[str, dict], b_rows: dict[str, dict], a_name: str, 
     }
 
 
-def group_accuracy(rows_by_id: dict[str, dict], manifest_meta: dict[str, tuple]) -> dict[str, dict]:
-    from collections import defaultdict
-    groups: dict[str, list[bool]] = defaultdict(list)
-    for tid, rec in rows_by_id.items():
-        ct = manifest_meta.get(tid, ())
-        key = "+".join(ct) if ct else "unknown"
-        groups[key].append(bool(rec["correct"]))
-    out = {}
-    for key, vals in sorted(groups.items()):
-        acc = sum(vals) / len(vals) if vals else 0.0
-        out[key] = {"count": len(vals), "correct": sum(vals), "accuracy": round(acc, 4)}
-    return out
-
-
-def pair_summary_grouped(
-    a_rows: dict[str, dict], b_rows: dict[str, dict],
-    a_name: str, b_name: str,
-    manifest_meta: dict[str, tuple],
-) -> dict[str, dict]:
-    from collections import defaultdict
-    groups: dict[str, list[tuple[bool, bool]]] = defaultdict(list)
-    for tid in sorted(set(a_rows) & set(b_rows)):
-        ct = manifest_meta.get(tid, ())
-        key = "+".join(ct) if ct else "unknown"
-        groups[key].append((bool(a_rows[tid]["correct"]), bool(b_rows[tid]["correct"])))
-    out = {}
-    for key, pairs in sorted(groups.items()):
-        n = len(pairs)
-        a_acc = sum(1 for a, _ in pairs if a) / n if n else 0.0
-        b_acc = sum(1 for _, b in pairs if b) / n if n else 0.0
-        improved = sum(1 for a, b in pairs if not a and b)
-        regressed = sum(1 for a, b in pairs if a and not b)
-        out[key] = {
-            "count": n,
-            f"{a_name}_acc": round(a_acc, 4),
-            f"{b_name}_acc": round(b_acc, 4),
-            "delta": round(b_acc - a_acc, 4),
-            "improved": improved,
-            "regressed": regressed,
-        }
-    return out
-
-
-def dump_config(args: argparse.Namespace, modes: list[str]) -> dict:
-    return {
-        "modes": modes,
-        "seed": args.seed,
-        "limit": args.limit,
-        "baseline_k": args.baseline_k,
-        "sf_success_k": args.sf_success_k,
-        "sf_failure_k": args.sf_failure_k,
-        "sf_style": args.sf_style,
-        "sf_repair": args.sf_repair,
-        "memory_strategy": args.memory_strategy,
-        "memory_max_strategy": args.memory_max_strategy,
-        "memory_max_warning": args.memory_max_warning,
-        "backend": args.backend,
-        "model": args.model,
-        "api_base": args.api_base,
-        "api_key_env": args.api_key_env,
-        "temperature": args.temperature,
-        "gemini_thinking_budget": args.gemini_thinking_budget,
-        "items_path": str(args.items_path) if args.items_path else None,
-    }
-
-
 def main() -> None:
     args = parse_args()
+    api_key = os.getenv("QWEN_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("Missing QWEN_API_KEY in .env")
 
     targets = {r["id"]: r for r in read_jsonl(args.targets_path)}
     examples = {r["id"]: r for r in read_jsonl(args.example_pool_path)}
     manifests = read_jsonl(args.manifest_path)
     items_map = build_items_map(args.items_path)
-    client = build_client(args)
-
-    manifest_meta: dict[str, tuple] = {}
-    for m in manifests:
-        manifest_meta[m["target_id"]] = tuple(m.get("calc_type", []))
+    client = OpenAI(api_key=api_key, base_url=args.api_base)
 
     if args.mode == "all":
         modes = ["zeroshot", "baseline", "treatment_sf"]
-    elif args.mode == "h1":
-        modes = ["baseline", "treatment_op_routed"]
-    elif args.mode == "h2":
-        modes = ["baseline", "treatment_sf", "treatment_op", "treatment_op_routed"]
+    elif args.mode == "h3":
+        modes = ["baseline", "treatment_h3"]
     else:
         modes = [args.mode]
 
-    write_json(args.output_dir / "config.json", dump_config(args, modes))
+    config_payload = {
+        k: (str(v) if isinstance(v, Path) else v)
+        for k, v in vars(args).items()
+    }
+    write_json(args.output_dir / "config.json", config_payload)
 
     paths = {}
     for mode in modes:
         paths[mode] = run_mode(mode, args, client, targets, examples, manifests, items_map)
 
     rows = {m: {r["target_id"]: r for r in read_jsonl(p)} for m, p in paths.items()}
-    summary: dict = {"modes": modes}
-
+    summary = {"modes": modes}
     if {"zeroshot", "baseline"}.issubset(rows):
         summary["baseline_vs_zeroshot"] = pair_summary(rows["zeroshot"], rows["baseline"], "zeroshot", "baseline")
-
-    baseline_rows = rows.get("baseline")
-    for treat_mode in ["treatment_sf", "treatment_op", "treatment_op_routed"]:
-        if baseline_rows and treat_mode in rows:
-            key = f"{treat_mode}_vs_baseline"
-            summary[key] = pair_summary(baseline_rows, rows[treat_mode], "baseline", treat_mode)
-            summary[f"{key}_by_calc_type"] = pair_summary_grouped(
-                baseline_rows, rows[treat_mode], "baseline", treat_mode, manifest_meta,
-            )
-
-    for m_name, m_rows in rows.items():
-        summary[f"{m_name}_by_calc_type"] = group_accuracy(m_rows, manifest_meta)
-
+    if {"baseline", "treatment_sf"}.issubset(rows):
+        summary["treatment_sf_vs_baseline"] = pair_summary(rows["baseline"], rows["treatment_sf"], "baseline", "treatment_sf")
+    if {"baseline", "treatment_h3"}.issubset(rows):
+        summary["treatment_h3_vs_baseline"] = pair_summary(
+            rows["baseline"],
+            rows["treatment_h3"],
+            "baseline",
+            "treatment_h3",
+        )
     write_json(args.output_dir / "summary.json", summary)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 

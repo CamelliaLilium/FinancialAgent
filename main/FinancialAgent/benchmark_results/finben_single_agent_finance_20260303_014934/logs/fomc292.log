@@ -1,5 +1,0 @@
-2026-03-03 03:46:56.653 | INFO     | app.agent.base:run:145 - Executing step 1/20
-2026-03-03 03:55:47.522 | ERROR    | app.llm:ask_tool:764 - OpenAI API error: Connection error.
-2026-03-03 03:55:47.523 | ERROR    | app.llm:ask_tool:770 - API error: Connection error.
-2026-03-03 03:56:56.661 | INFO     | app.agent.toolcall:cleanup:300 - 🧹 Cleaning up resources for agent 'Finance'...
-2026-03-03 03:56:56.662 | INFO     | app.agent.toolcall:cleanup:312 - ✨ Cleanup complete for agent 'Finance'.

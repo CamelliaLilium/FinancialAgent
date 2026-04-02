@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Run paired A/B evaluation for few-shot prompting.
+Run paired A/B few-shot evaluation for answer-only vs answer+trajectory prompts.
 
-Modes:
-- zeroshot: no retrieved examples
-- baseline: answer-only retrieved examples
-- treatment: answer + trajectory
-- treatment_sf: success + failure experience notes
+Uses DashScope OpenAI-compatible API for Qwen3-VL-8B-Instruct. API key is read
+from QWEN_API_KEY in .env (ReasoningRag/.env); add it manually.
+
+Usage:
+    python run_qwen_ab_test.py --backend dry-run
+    python run_qwen_ab_test.py --backend openai
 """
 
 import argparse
 import base64
 import io
 import json
-import math
 import os
 import random
 import re
@@ -36,21 +36,16 @@ ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env")
 
 SYSTEM_PROMPT = (
-    "You are a financial reasoning expert. Learn from provided experiences, "
-    "solve the target problem from its own context, and output one final answer line."
+    "You are a financial reasoning expert. Study the worked examples carefully, "
+    "then solve the target problem. Use the examples as references for method, "
+    "but answer the target question independently. You must end with exactly one line: "
+    "**Final Answer:** <your answer>"
 )
-
-ANSWER_INSTRUCTIONS = {
-    "numerical": "Output the final answer as a single number only.",
-    "mcq": "Output only the option letter(s), e.g. A or AC.",
-    "boolean": "Output only Yes or No.",
-    "free_text": "Output a concise direct answer.",
-}
 
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Run paired A/B few-shot evaluation",
+        description="Run paired A/B few-shot test for answer-only vs answer+trajectory",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     p.add_argument("--targets-path", type=Path,
@@ -60,45 +55,41 @@ def parse_args() -> argparse.Namespace:
                    default=ROOT / "data" / "ab_test" / "example_pool_finmmr_with_trajectories.jsonl",
                    help="example pool with trajectories")
     p.add_argument("--manifest-path", type=Path,
-                   default=ROOT / "data" / "ab_test" / "manifest_finmmr_100_3s_0f.jsonl",
+                   default=ROOT / "data" / "ab_test" / "manifest_finmmr_100_3shot.jsonl",
                    help="paired example selection manifest")
     p.add_argument("--output-dir", type=Path,
                    default=ROOT / "data" / "ab_test" / "results",
                    help="directory for per-mode results and summaries")
     p.add_argument("--model", default="qwen3-vl-8b-instruct",
-                   help="model name passed to backend")
+                   help="model name passed to the backend")
     p.add_argument("--backend", choices=["openai", "dry-run"], default="dry-run",
                    help="inference backend")
     p.add_argument("--api-base", default="https://dashscope.aliyuncs.com/compatible-mode/v1",
-                   help="OpenAI-compatible API base URL")
-    p.add_argument("--mode", choices=["zeroshot", "baseline", "treatment", "treatment_sf", "both", "all"], default="both",
-                   help="which branch of A/B test to run")
+                   help="OpenAI-compatible API base URL (DashScope)")
+    p.add_argument("--mode", choices=["baseline", "treatment", "both"], default="both",
+                   help="which branch of the A/B test to run")
     p.add_argument("--limit", type=int, default=0,
-                   help="run only first N targets")
+                   help="run only the first N targets from the manifest")
     p.add_argument("--temperature", type=float, default=0.0,
                    help="generation temperature")
     p.add_argument("--top-p", type=float, default=1.0,
                    help="generation top_p")
     p.add_argument("--max-tokens", type=int, default=1024,
                    help="maximum output tokens")
-    p.add_argument("--trajectory-char-limit", type=int, default=2200,
-                   help="truncate each trajectory to this many chars")
-    p.add_argument("--baseline-max-examples", type=int, default=0,
-                   help="cap success examples used in baseline/treatment (0 keeps all)")
-    p.add_argument("--treatment-sf-max-success", type=int, default=0,
-                   help="cap success examples used in treatment_sf (0 keeps all)")
+    p.add_argument("--trajectory-char-limit", type=int, default=4000,
+                   help="truncate each example trajectory to this many characters (0 disables)")
     p.add_argument("--example-max-images", type=int, default=1,
-                   help="maximum images per example (0 keeps all)")
+                   help="maximum images to include per example (0 keeps all)")
     p.add_argument("--target-max-images", type=int, default=0,
-                   help="maximum images for target (0 keeps all)")
+                   help="maximum images to include for the target problem (0 keeps all)")
     p.add_argument("--image-max-side", type=int, default=768,
-                   help="resize images to this max side (0 disables)")
+                   help="resize images so the longest side is at most this many pixels (0 disables)")
     p.add_argument("--image-jpeg-quality", type=int, default=85,
-                   help="JPEG quality when re-encoding")
+                   help="JPEG quality when re-encoding images")
     p.add_argument("--image-detail", choices=["auto", "low", "high"], default="auto",
-                   help="detail level for image_url blocks")
+                   help="detail level sent for each image_url block")
     p.add_argument("--request-retries", type=int, default=3,
-                   help="retry count for transient failures")
+                   help="retry count for transient API failures")
     p.add_argument("--retry-base-delay", type=float, default=2.0,
                    help="initial retry backoff delay in seconds")
     p.add_argument("--retry-max-delay", type=float, default=30.0,
@@ -127,31 +118,39 @@ def write_json(path: Path, obj):
 def get_openai_client(args: argparse.Namespace):
     if OpenAI is None:
         raise RuntimeError("Missing dependency `openai`. Install it with `pip install openai`.")
+
     api_key = os.getenv("QWEN_API_KEY", "")
     if not api_key:
-        raise RuntimeError("Missing API key. Set QWEN_API_KEY in .env.")
+        raise RuntimeError("Missing API key. Set QWEN_API_KEY in .env (ReasoningRag/.env).")
+
     return OpenAI(api_key=api_key, base_url=args.api_base)
 
 
 def probe_openai_backend(args: argparse.Namespace):
     if args.backend != "openai":
         return
+
     client = get_openai_client(args)
     try:
         models = client.models.list()
     except Exception as e:
         raise RuntimeError(
-            "Cannot reach OpenAI-compatible backend.\n"
+            "Cannot reach the OpenAI-compatible backend.\n"
             f"- endpoint: {args.api_base.rstrip('/')}/models\n"
-            f"- cause: {e}"
+            f"- cause: {e}\n"
+            "- if you want DashScope, use `--api-base https://dashscope.aliyuncs.com/compatible-mode/v1`"
         ) from e
+
     model_ids = [item.id for item in getattr(models, "data", []) if getattr(item, "id", None)]
     print(f"Connected to backend: {args.api_base.rstrip('/')}/models")
     if model_ids:
         preview = ", ".join(model_ids[:8])
         print(f"Available models: {preview}{' ...' if len(model_ids) > 8 else ''}")
         if args.model not in model_ids:
-            print(f"Warning: requested model id is not listed by backend. Requested `{args.model}`.")
+            print(
+                "Warning: requested model id is not listed by backend. "
+                f"Requested `{args.model}`."
+            )
 
 
 def extract_final_answer(text: str) -> str:
@@ -166,9 +165,8 @@ def extract_final_answer(text: str) -> str:
 
 
 def clean_trajectory(text: str, char_limit: int) -> str:
-    cleaned = re.sub(r"\*\*Final Answer:\*\*.*", "", text or "", flags=re.IGNORECASE | re.DOTALL).strip()
+    cleaned = re.sub(r"\*\*Final Answer:\*\*.*", "", text, flags=re.IGNORECASE | re.DOTALL).strip()
     cleaned = re.sub(r"\\boxed\{([^}]+)\}", r"\1", cleaned)
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     if char_limit > 0 and len(cleaned) > char_limit:
         cleaned = cleaned[:char_limit].rstrip() + "\n[Trajectory truncated]"
     return cleaned
@@ -237,6 +235,7 @@ def encode_optimized_image_data_url(path: Path, args: argparse.Namespace, cache:
     cache_key = (str(path), args.image_max_side, args.image_jpeg_quality)
     if cache_key in cache:
         return cache[cache_key]
+
     if args.image_max_side <= 0 or Image is None:
         data_url = encode_image_data_url(path)
         cache[cache_key] = data_url
@@ -246,7 +245,7 @@ def encode_optimized_image_data_url(path: Path, args: argparse.Namespace, cache:
         img = img.convert("RGBA")
         if max(img.size) > args.image_max_side:
             img.thumbnail((args.image_max_side, args.image_max_side))
-        background = Image.new("RGB", img.size, "white")
+        background = Image.new("RGB", img.size, "white")  # type: ignore[arg-type]
         background.paste(img, mask=img.split()[-1])
         buf = io.BytesIO()
         background.save(buf, format="JPEG", quality=args.image_jpeg_quality, optimize=True)
@@ -257,74 +256,45 @@ def encode_optimized_image_data_url(path: Path, args: argparse.Namespace, cache:
 
 
 def build_image_block(url: str, detail: str) -> dict:
-    return {"type": "image_url", "image_url": {"url": url, "detail": detail}}
-
-
-def build_failure_guardrails(failure_examples: list[dict], target_answer_type: str) -> list[str]:
-    rules = ["Do not copy numbers from examples; recompute using target context only."]
-    if target_answer_type == "numerical":
-        rules.append("Check sign and unit scale (e.g., thousand/million) before final answer.")
-        rules.append("For numerical output, keep decimal precision consistent with target statement.")
-    elif target_answer_type == "mcq":
-        rules.append("Map evidence to options carefully and output option letter(s) only.")
-    elif target_answer_type == "boolean":
-        rules.append("Return only Yes or No.")
-    seen_empty = any("empty predicted" in (ex.get("judge_reason") or "").lower() for ex in failure_examples)
-    if seen_empty:
-        rules.append("Never leave final answer blank.")
-    rules.append("Always end with exactly one line: **Final Answer:** <answer>.")
-
-    dedup = []
-    for r in rules:
-        if r not in dedup:
-            dedup.append(r)
-    return dedup[:5]
+    return {
+        "type": "image_url",
+        "image_url": {
+            "url": url,
+            "detail": detail,
+        },
+    }
 
 
 def build_user_content(
     target: dict,
-    success_examples: list[dict],
-    failure_examples: list[dict],
+    examples: list[dict],
     mode: str,
     trajectory_char_limit: int,
     args: argparse.Namespace,
     image_cache: dict[tuple[str, int, int], str],
 ) -> list[dict]:
     content = []
-    if mode == "zeroshot":
-        content.append({"type": "text", "text": "You will see one target problem. Solve it directly."})
-    elif mode == "treatment_sf":
-        content.append({
-            "type": "text",
-            "text": (
-                f"You will see {len(success_examples)} success experiences and {len(failure_examples)} failure experiences. "
-                "Use them as method guidance, but solve target strictly from target context."
-            ),
-        })
-    else:
-        content.append({
-            "type": "text",
-            "text": (
-                f"You will see {len(success_examples)} worked examples, then one target problem. "
-                "Use examples for method reference only."
-            ),
-        })
+    content.append({
+        "type": "text",
+        "text": (
+            "You will see three worked examples, then one target problem. "
+            "Each example contains its question, image, and gold answer. "
+            "In the treatment setting, each example also contains a trajectory."
+        ),
+    })
 
-    for idx, example in enumerate(success_examples, start=1):
+    for idx, example in enumerate(examples, start=1):
         text = [
-            f"=== Success Example {idx} ===",
+            f"=== Example {idx} ===",
             f"Question: {example['question']}",
         ]
-        if example.get("context"):
-            text.append(f"Context: {example['context']}")
         if example.get("options"):
             text.append(f"Options: {example['options']}")
-        text.append(f"Gold Answer: {example['gold_answer']}")
+        text.append(f"Answer: {example['gold_answer']}")
         if mode == "treatment":
+            trajectory = clean_trajectory(example.get("trajectory", ""), trajectory_char_limit)
             text.append("Trajectory:")
-            text.append(clean_trajectory(example.get("trajectory", ""), trajectory_char_limit))
-        if mode == "treatment_sf":
-            text.append("Experience Note: Reuse method only; compute answer from target context, not from examples.")
+            text.append(trajectory)
         content.append({"type": "text", "text": "\n".join(text)})
         for rel_path in select_image_paths(example.get("image_paths", []), args.example_max_images):
             image_path = ROOT / rel_path
@@ -335,23 +305,14 @@ def build_user_content(
                 args.image_detail,
             ))
 
-    if mode == "treatment_sf":
-        rules = build_failure_guardrails(failure_examples, target.get("answer_type", ""))
-        guardrail_lines = ["=== Failure-derived Guardrails ==="] + [f"- {r}" for r in rules]
-        content.append({"type": "text", "text": "\n".join(guardrail_lines)})
-
     target_text = [
         "=== Target Problem ===",
         f"Question: {target['question']}",
     ]
-    if target.get("context"):
-        target_text.append(f"Context: {target['context']}")
     if target.get("options"):
         target_text.append(f"Options: {target['options']}")
-    target_text.append(ANSWER_INSTRUCTIONS.get(target.get("answer_type"), ANSWER_INSTRUCTIONS["free_text"]))
-    target_text.append("Think briefly and end with: **Final Answer:** <answer>")
+    target_text.append("Solve the target problem. Do not repeat the examples. End with `**Final Answer:** <answer>`.")
     content.append({"type": "text", "text": "\n".join(target_text)})
-
     for rel_path in select_image_paths(target.get("image_paths", []), args.target_max_images):
         image_path = ROOT / rel_path
         if not image_path.exists():
@@ -366,6 +327,7 @@ def build_user_content(
 def with_image_detail(user_content: list[dict], detail: str) -> list[dict]:
     if not detail:
         return user_content
+
     updated = []
     for item in user_content:
         if item.get("type") != "image_url":
@@ -428,6 +390,7 @@ def call_openai_chat(args: argparse.Namespace, user_content: list[dict]) -> tupl
         detail = args.image_detail
         if attempt > 1 and detail != "low":
             detail = "low"
+
         payload = build_chat_payload(args, with_image_detail(user_content, detail))
         try:
             completion = client.chat.completions.create(**payload, timeout=600)
@@ -443,10 +406,10 @@ def call_openai_chat(args: argparse.Namespace, user_content: list[dict]) -> tupl
                 return "\n".join(parts).strip(), last_trace_id
             return str(message), last_trace_id
         except Exception as e:
-            status_code, detail_msg, trace_id = parse_openai_exception(e)
+            status_code, detail, trace_id = parse_openai_exception(e)
             last_trace_id = trace_id or last_trace_id
             prefix = f"HTTP {status_code}" if status_code is not None else "Request failed"
-            last_error = RuntimeError(format_api_error(prefix, detail_msg, trace_id))
+            last_error = RuntimeError(format_api_error(prefix, detail, trace_id))
             if status_code is not None and status_code >= 500 and attempt < args.request_retries:
                 time.sleep(compute_retry_delay(args, attempt))
                 continue
@@ -454,8 +417,8 @@ def call_openai_chat(args: argparse.Namespace, user_content: list[dict]) -> tupl
                 time.sleep(compute_retry_delay(args, attempt))
                 continue
             raise last_error from e
-    raise last_error or RuntimeError("Unknown request failure")
-
+    else:
+        raise last_error or RuntimeError("Unknown request failure")
 
 def load_completed_ids(path: Path) -> set[str]:
     done = set()
@@ -479,22 +442,14 @@ def run_mode(mode: str, args: argparse.Namespace, targets: dict[str, dict], exam
     with open(output_path, open_mode, encoding="utf-8") as out:
         for idx, manifest in enumerate(pending, start=1):
             target = targets[manifest["target_id"]]
-            success_ids = [] if mode == "zeroshot" else list(manifest.get("example_ids", []))
-            if mode in {"baseline", "treatment"} and args.baseline_max_examples > 0:
-                success_ids = success_ids[:args.baseline_max_examples]
-            if mode == "treatment_sf" and args.treatment_sf_max_success > 0:
-                success_ids = success_ids[:args.treatment_sf_max_success]
-            failure_ids = manifest.get("failure_example_ids", []) if mode == "treatment_sf" else []
-            success_examples = [examples[eid] for eid in success_ids if eid in examples]
-            failure_examples = [examples[eid] for eid in failure_ids if eid in examples]
+            selected_examples = [examples[eid] for eid in manifest["example_ids"]]
             started = time.time()
             error = ""
             trace_id = ""
             try:
                 user_content = build_user_content(
                     target,
-                    success_examples,
-                    failure_examples,
+                    selected_examples,
                     mode,
                     args.trajectory_char_limit,
                     args,
@@ -517,8 +472,7 @@ def run_mode(mode: str, args: argparse.Namespace, targets: dict[str, dict], exam
             record = {
                 "mode": mode,
                 "target_id": target["id"],
-                "example_ids": success_ids,
-                "failure_example_ids": failure_ids,
+                "example_ids": manifest["example_ids"],
                 "gold_answer": target["gold_answer"],
                 "answer_type": target["answer_type"],
                 "predicted": predicted,
@@ -535,95 +489,60 @@ def run_mode(mode: str, args: argparse.Namespace, targets: dict[str, dict], exam
     return output_path
 
 
-def compute_sign_test_p_value(improved_count: int, regressed_count: int) -> float:
-    n = improved_count + regressed_count
-    if n == 0:
-        return 1.0
-    k = min(improved_count, regressed_count)
-    tail = sum(math.comb(n, i) for i in range(0, k + 1)) / (2 ** n)
-    return min(1.0, 2.0 * tail)
-
-
-def summarize_pair(rows_a: dict[str, dict], rows_b: dict[str, dict], a_name: str, b_name: str) -> dict | None:
-    common_ids = sorted(set(rows_a) & set(rows_b))
+def summarize(mode_to_path: dict[str, Path], args: argparse.Namespace):
+    if not {"baseline", "treatment"}.issubset(mode_to_path):
+        return
+    baseline_rows = {row["target_id"]: row for row in read_jsonl(mode_to_path["baseline"])}
+    treatment_rows = {row["target_id"]: row for row in read_jsonl(mode_to_path["treatment"])}
+    common_ids = sorted(set(baseline_rows) & set(treatment_rows))
     if not common_ids:
-        return None
+        return
+
     improved = []
     regressed = []
     same_correct = 0
     same_wrong = 0
     for target_id in common_ids:
-        a_ok = rows_a[target_id]["correct"]
-        b_ok = rows_b[target_id]["correct"]
-        if not a_ok and b_ok:
+        b = baseline_rows[target_id]["correct"]
+        t = treatment_rows[target_id]["correct"]
+        if not b and t:
             improved.append(target_id)
-        elif a_ok and not b_ok:
+        elif b and not t:
             regressed.append(target_id)
-        elif a_ok and b_ok:
+        elif b and t:
             same_correct += 1
         else:
             same_wrong += 1
-    a_acc = sum(1 for tid in common_ids if rows_a[tid]["correct"]) / len(common_ids)
-    b_acc = sum(1 for tid in common_ids if rows_b[tid]["correct"]) / len(common_ids)
-    return {
+
+    baseline_acc = sum(1 for row in baseline_rows.values() if row["correct"]) / len(common_ids)
+    treatment_acc = sum(1 for row in treatment_rows.values() if row["correct"]) / len(common_ids)
+    summary = {
         "paired_count": len(common_ids),
-        f"{a_name}_accuracy": round(a_acc, 4),
-        f"{b_name}_accuracy": round(b_acc, 4),
-        "delta": round(b_acc - a_acc, 4),
+        "baseline_accuracy": round(baseline_acc, 4),
+        "treatment_accuracy": round(treatment_acc, 4),
+        "delta": round(treatment_acc - baseline_acc, 4),
         "improved_count": len(improved),
         "regressed_count": len(regressed),
         "unchanged_correct_count": same_correct,
         "unchanged_wrong_count": same_wrong,
-        "sign_test_p_value": round(compute_sign_test_p_value(len(improved), len(regressed)), 6),
         "improved_ids": improved[:20],
         "regressed_ids": regressed[:20],
-    }
-
-
-def summarize(mode_to_path: dict[str, Path], args: argparse.Namespace):
-    rows_by_mode = {
-        mode: {row["target_id"]: row for row in read_jsonl(path)}
-        for mode, path in mode_to_path.items()
-    }
-    comparisons = {}
-    if {"zeroshot", "baseline"}.issubset(rows_by_mode):
-        pair = summarize_pair(rows_by_mode["zeroshot"], rows_by_mode["baseline"], "zeroshot", "baseline")
-        if pair:
-            comparisons["baseline_vs_zeroshot"] = pair
-    if {"baseline", "treatment"}.issubset(rows_by_mode):
-        pair = summarize_pair(rows_by_mode["baseline"], rows_by_mode["treatment"], "baseline", "treatment")
-        if pair:
-            comparisons["treatment_vs_baseline"] = pair
-    if {"baseline", "treatment_sf"}.issubset(rows_by_mode):
-        pair = summarize_pair(rows_by_mode["baseline"], rows_by_mode["treatment_sf"], "baseline", "treatment_sf")
-        if pair:
-            comparisons["treatment_sf_vs_baseline"] = pair
-
-    if not comparisons:
-        return
-
-    summary = {
         "model": args.model,
         "backend": args.backend,
-        "comparisons": comparisons,
     }
-    if "treatment_sf_vs_baseline" in comparisons:
-        summary.update(comparisons["treatment_sf_vs_baseline"])
-    elif "treatment_vs_baseline" in comparisons:
-        summary.update(comparisons["treatment_vs_baseline"])
-
     write_json(args.output_dir / "summary.json", summary)
-    lines = ["# A/B Few-shot Summary", ""]
-    for name, payload in comparisons.items():
-        lines.append(f"## {name}")
-        lines.extend([
-            f"- paired_count: {payload['paired_count']}",
-            f"- delta: {payload['delta']}",
-            f"- improved_count: {payload['improved_count']}",
-            f"- regressed_count: {payload['regressed_count']}",
-            f"- sign_test_p_value: {payload['sign_test_p_value']}",
-            "",
-        ])
+    lines = [
+        "# A/B Few-shot Summary",
+        "",
+        f"- paired_count: {summary['paired_count']}",
+        f"- baseline_accuracy: {summary['baseline_accuracy']}",
+        f"- treatment_accuracy: {summary['treatment_accuracy']}",
+        f"- delta: {summary['delta']}",
+        f"- improved_count: {summary['improved_count']}",
+        f"- regressed_count: {summary['regressed_count']}",
+        f"- unchanged_correct_count: {summary['unchanged_correct_count']}",
+        f"- unchanged_wrong_count: {summary['unchanged_wrong_count']}",
+    ]
     (args.output_dir / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
@@ -639,13 +558,7 @@ def main():
     if args.limit:
         manifests = manifests[:args.limit]
 
-    if args.mode in {"zeroshot", "baseline", "treatment", "treatment_sf"}:
-        modes = [args.mode]
-    elif args.mode == "both":
-        modes = ["baseline", "treatment"]
-    else:
-        modes = ["zeroshot", "baseline", "treatment", "treatment_sf"]
-
+    modes = [args.mode] if args.mode in {"baseline", "treatment"} else ["baseline", "treatment"]
     mode_to_path = {}
     for mode in modes:
         mode_to_path[mode] = run_mode(mode, args, targets, examples, manifests)
