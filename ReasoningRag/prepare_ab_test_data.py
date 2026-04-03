@@ -17,6 +17,12 @@ import shutil
 from collections import Counter
 from pathlib import Path
 
+try:
+    import numpy as np
+    _NUMPY_OK = True
+except ImportError:
+    _NUMPY_OK = False
+
 ROOT = Path(__file__).resolve().parent
 
 TOKEN_RE = re.compile(r"[a-z0-9]+")
@@ -56,6 +62,12 @@ def parse_args() -> argparse.Namespace:
                    help="copy selected target images into ReasoningRag/images")
     p.add_argument("--dry-run", action="store_true",
                    help="show planned outputs without writing files")
+    p.add_argument("--retrieval", choices=["idf", "faiss"], default="idf",
+                   help="example selection: idf (lexical) or faiss (NV-Embed-v2 semantic, A1 experiment)")
+    p.add_argument("--embed-model-path", type=Path, default=ROOT / "NV-Embed-v2",
+                   help="NV-Embed-v2 model path (only used when --retrieval faiss)")
+    p.add_argument("--embed-batch-size", type=int, default=8,
+                   help="encoding batch size for NV-Embed-v2")
     return p.parse_args()
 
 
@@ -283,6 +295,43 @@ def score_example(target: dict, example: dict, idf: dict[str, float]) -> float:
     return lexical + 0.75 * calc_overlap + 0.5 * shared_answer_type
 
 
+def build_pool_faiss_index(pool: list[dict], model_path: Path, batch_size: int):
+    """Encode pool questions with NV-Embed-v2 and return (faiss_index, model)."""
+    if not _NUMPY_OK:
+        raise RuntimeError("numpy is required for --retrieval faiss")
+    import faiss
+    from step4_build_index import load_nvembed, encode_queries
+    print(f"Loading NV-Embed-v2 from {model_path} …")
+    model, device = load_nvembed(model_path)
+    questions = [item.get("question", "") for item in pool]
+    print(f"  Encoding {len(questions)} pool questions on {device} …")
+    vecs = encode_queries(model, questions, batch_size=batch_size, max_length=512)
+    index = faiss.IndexFlatIP(vecs.shape[1])
+    index.add(vecs)
+    print(f"  Pool FAISS index built: {index.ntotal} vectors, dim={vecs.shape[1]}")
+    return index, model
+
+
+def pick_examples_faiss(
+    target: dict, pool: list[dict], faiss_index, model, batch_size: int, shots: int
+) -> list[dict]:
+    """Semantic example selection via NV-Embed-v2 + answer_type/calc_type bonus."""
+    from step4_build_index import encode_queries
+    target_vec = encode_queries(model, [target.get("question", "")], batch_size=1, max_length=512)
+    k = min(shots * 6, faiss_index.ntotal)
+    scores, ids = faiss_index.search(target_vec, k)
+    answer_type = target.get("answer_type")
+    calc_types = set(target.get("calc_type", []))
+    candidates = []
+    for row_id, score in zip(ids[0], scores[0]):
+        item = pool[int(row_id)]
+        bonus = (0.1 if item.get("answer_type") == answer_type else 0.0)
+        bonus += (0.05 if calc_types & set(item.get("calc_type", [])) else 0.0)
+        candidates.append((item, float(score) + bonus))
+    candidates.sort(key=lambda x: -x[1])
+    return [item for item, _ in candidates[:shots]]
+
+
 def pick_examples(target: dict, pool: list[dict], idf: dict[str, float], shots: int) -> list[dict]:
     answer_type = target.get("answer_type")
     calc_types = set(target.get("calc_type", []))
@@ -316,11 +365,27 @@ def main():
     args = parse_args()
     targets, counts = load_finmmr_targets(args)
     pool = join_example_pool(args.cases_path, args.trajectories_path)
-    idf = build_idf(pool)
 
+    if args.retrieval == "faiss":
+        faiss_index, embed_model = build_pool_faiss_index(
+            pool, args.embed_model_path, args.embed_batch_size
+        )
+        idf = None
+    else:
+        idf = build_idf(pool)
+        faiss_index = embed_model = None
+
+    tag = f"_faiss" if args.retrieval == "faiss" else ""
     manifests = []
     for target in targets:
-        selected = pick_examples(target, pool, idf, args.shots)
+        if args.retrieval == "faiss":
+            selected = pick_examples_faiss(
+                target, pool, faiss_index, embed_model, args.embed_batch_size, args.shots
+            )
+            scores_dict: dict = {}
+        else:
+            selected = pick_examples(target, pool, idf, args.shots)
+            scores_dict = {row["id"]: round(score_example(target, row, idf), 4) for row in selected}
         manifests.append({
             "target_id": target["id"],
             "target_source": target["source"],
@@ -329,15 +394,15 @@ def main():
             "gold_answer": target["gold_answer"],
             "decimal_places": target["decimal_places"],
             "example_ids": [row["id"] for row in selected],
-            "selection_scores": {
-                row["id"]: round(score_example(target, row, idf), 4) for row in selected
-            },
+            "selection_scores": scores_dict,
+            "retrieval": args.retrieval,
         })
 
     summary = {
         "target_count": len(targets),
         "shots": args.shots,
         "seed": args.seed,
+        "retrieval": args.retrieval,
         "target_source": "finmmr_test",
         "split_counts": counts,
         "example_pool_size": len(pool),
@@ -345,8 +410,8 @@ def main():
 
     targets_path = args.output_dir / "targets_finmmr_100.jsonl"
     pool_path = args.output_dir / "example_pool_finmmr_with_trajectories.jsonl"
-    manifest_path = args.output_dir / "manifest_finmmr_100_3shot.jsonl"
-    summary_path = args.output_dir / "prepare_summary.json"
+    manifest_path = args.output_dir / f"manifest_finmmr_100_{args.shots}shot{tag}.jsonl"
+    summary_path = args.output_dir / f"prepare_summary{tag}.json"
 
     print(f"Selected {len(targets)} targets from FinMMR test: {counts}")
     print(f"Joined example pool with trajectories: {len(pool)} items")
