@@ -16,6 +16,7 @@
 - 已确认结论 2：到目前为止，没有任何一轮 `Treatment_SF` 达到验收标准；最好一次仅 `+1.67pp`，且 `p=0.726562`，不能视为有效提升。
 - 已确认结论 3：`step3_extract_memories.py` 已产出可用资产（`ReasoningRag/test/pipeline/items.jsonl` 共 807 条 memory，覆盖 `ReasoningRag/test/pipeline/extract_progress.jsonl` 中 271 个 source question），但“memory 存在”不等于“memory 注入有效”。
 - 已确认结论 4：目前主要阻塞不在工程闭环，而在经验表示与注入方式；也就是“怎么给经验”有问题，而不是“评不出来”。
+- 已确认结论 5（H3 最新）：即使改成 ReasoningBank 风格的“短 operator + contrastive + 迭代记忆”，在 120 样本 smoke 上仍是负增益（`-0.83pp`，`p=1.0`）。这说明仅靠 prompt 侧“经验表达压缩”还不够，瓶颈已更接近模型能力/证据利用能力，而不只是 memory 文案质量。
 
 说明：表中 `Traj/SF` 列统一记录该轮最相关的轨迹增强结果；早期轮次若只测了 `Treatment`，则该列记 `Treatment`；进入 self-evolution 阶段后记 `Treatment_SF`。
 
@@ -33,6 +34,7 @@
 | 10 | `ReasoningRag/test/results/selfevo_eval_round4_items_contrastive/summary.json` | 120 | items + contrastive failure notes | 0.3583 | 0.4167 | 0.4083 | +5.83pp | -0.83pp | 1.000000 | contrastive 比 guardrail 更差 |
 | 11 | `ReasoningRag/test/results/selfevo_eval_round5_typedmem/summary.json` | 120 | typed memory 匹配 + 限长注入 | 0.3583 | 0.4333 | 0.4083 | +7.50pp | -2.50pp | 0.453125 | 更强匹配仍显著伤害 |
 | 12 | `ReasoningRag/test/results/selfevo_eval_round6_typedmem_3s/summary.json` | 120 | typed memory + success shot 从 5 降到 3 | 0.3667 | 0.4250 | 0.4000 | +5.83pp | -2.50pp | 0.453125 | 缩短 prompt 也未改善 |
+| 13 | `ReasoningRag/test/results/h3_contrastive_ops_smoke120/summary.json` | 120 | H3：operator-level contrastive + iterative rule（`k=1`，`--no-sf-repair`） | - | 0.4167 | 0.4083 | - | -0.83pp | 1.000000 | H3 仍负增益，说明“经验压缩”未转化成稳定收益 |
 
 ## 3. 所有尝试过的方案：按时间顺序的失败分析
 
@@ -106,126 +108,42 @@
 
 总体判断：当前 evidence 更支持“现有 self-evolution 经验表示会改变模型的解题行为，并经常朝错误方向改变”，而不是“经验还不够多”。继续堆更多自然语言 memory，大概率只会重复这个问题。
 
+### 3.6 H3（ReasoningBank 式 contrastive 提炼）验证：`h3_contrastive_ops_smoke120`
+
+- 配置：`ReasoningRag/test/results/h3_contrastive_ops_smoke120/config.json`
+  - `mode=h3`（内部执行 `baseline` vs `treatment_h3`）
+  - `limit=120`，`baseline_k=3`
+  - `sf_success_k=3`，`sf_failure_k=1`
+  - `memory_strategy=typed`，`h3_ops_k=1`
+  - `h3_iterative=true`，`h3_history_limit=64`
+  - `max_tokens=256`，`temperature=0`，`--no-sf-repair`
+- 结果：`Baseline=0.4167`，`Treatment_H3=0.4083`，`Δ=-0.83pp`，`improved=3`，`regressed=4`，`p=1.0`。
+- 解释：
+  1. H3 相比旧的长文本 memory 的确更“短、硬、可执行”，但仍未带来总体收益，说明**表示压缩不是充分条件**。
+  2. 与 oracle 结论一致：下一步要优先区分“证据表示问题”与“模型利用证据能力问题”。仅继续微调 operator 文案，预期收益很低。
+  3. 从样本日志看，H3 的主要波动来自数值题精度、单位/比例口径、以及“可直接抽取 vs 重新计算”的策略切换，仍是同一类根因。
+
 ## 4. 根据最新情况推导的后续实验策略
 
 - 当前进度判断：工程闭环已完成，RAG 有效性已完成，self-evolution 仍处在“表示失效”阶段；下一阶段不该再做大而全 prompt 微调，而应转为最小因子消融。
 
-1. 先做严格消融，定位“到底是哪一块在伤害”
-   - 固定同一批 120 target、同一 seed，只比较 4 个最小变体：`failure-only`、`strategy-only`、`failure+strategy`、`baseline+repair`。
-   - 每轮都保存 `config.json` 到结果目录，至少记录：shot 数、是否启用 repair、memory 条数、memory 来源、failure 风格。
-   - 目标不是马上转正，而是判断负增益来自 `warning`、`strategy`、还是 `repair`。
+结合 H3 与 ReasoningBank 论文要点（记忆要结构化、对比式、可迭代），下一阶段策略更新如下：
 
-2. 把评测按题型拆开，不再只看总体均值
-   - 直接按 manifest 中的 `calc_type` 和 `answer_type` 出分组统计：`extraction`、`arithmetic`、`ratio`、`multi_step`。
-   - 特别关注：`bizbench_test_78` 这类“既能直接读聚合值、又能展开运算”的题是否系统性受害。
-   - 若某个子类稳定正增益，可先把 self-evolution 限制到该子类，而不是要求全量任务统一受益。
+1. 新主线改为“证据卡片（evidence card）”判别实验（优先级最高）
+   - 设计：在检索已包含答案证据的 target 子集上，做 paired 对比：`rag_raw` vs `h3_evidence_card`。
+   - 目标：判别当前失败是“提示表示问题”还是“模型能力问题”。
+   - 验收门槛（oracle 建议）：覆盖量达到门槛后，若 evidence_card 相对 raw 提升显著（例如 +8pp 且 CI>0），则继续投入表示工程；若提升极小且整体准确率仍低，则转向能力侧路线。
 
-3. 停止注入泛化自然语言 memory，改试“操作模板”
-   - 不再使用类似“verify context / use keywords”这类宽泛提示；改成极短、可执行、与失败模式一一对应的 operator template。
-   - 示例方向：`如果表中已有 total/aggregate 行，禁止重算全表`；`数值题优先保留原始精度，不在最后一步做口语化四舍五入`；`若答案可直接抽取，不执行额外推导`。
-   - 每次最多注入 1 条模板；若 target 不满足触发条件，则完全不注入。
+2. H3 memory 更新机制改为“只记可验证 operator”
+   - 每条 memory 统一结构：`trigger / H+ / H- / H?`（做什么、避免什么、快速检查什么）。
+   - 严格触发：仅当错误类型明确且可归因（单位、口径、重算、精度）才新增；否则不写入，防止噪声增长。
 
-4. 把“答案格式修正”从“重新思考答案”中拆开
-   - 在下一轮先关闭 LLM repair，改成确定性数值抽取与格式化；只有抽取失败时才进入极简 formatter。
-   - 原因：现有 round5/6 说明最后一跳会把 `16.36` 改成 `16.35/16.4` 这类精度错误，repair 不能再和 reasoning 混在一起。
+3. 继续 token 预算约束
+   - 注入保持 `k=1`，单条 rule 限长；题型不匹配即不注入。
+   - 避免再次回到“长提示 + 多规则叠加”路径。
 
-5. 设立晋升与停止条件，避免继续无边界调参
-   - 只有当 smoke-120 同时满足 `Δ(Treatment_SF - Baseline) >= +2.0pp`、`improved_count > regressed_count`、且无明显新失败簇时，才晋升到 300 样本。
-   - 如果完成上述最小消融后，仍没有任何单因子或单子类出现稳定正趋势，应暂时冻结 self-evolution 方向，转而考虑：
-     - 是否需要更结构化的 experience representation；
-     - 是否该把 self-evolution 放到检索侧（检索什么经验）而不是 prompt 侧（怎么写经验）；
-     - 或者当前 8B 模型是否不足以稳定利用这类经验。
+4. 停止条件保持不变且更严格执行
+   - 任一方案若连续两轮 smoke 仍无正趋势（`improved <= regressed` 且 `Δ<=0`），立即降级优先级，不做同构微调。
+   - 只有满足 `Δ>=+2pp` 且统计显著，才晋升 300 样本。
 
-## 5. 假设 2 验证结果：operator template 是否优于自然语言 memory
-
-结果目录：`ReasoningRag/test/results/h2_operator_template/`
-
-### 实验配置
-- smoke-120，seed=20260324，baseline_k=3，repair=off
-- 4 组对比：B0=baseline / B1=treatment_sf（NL memory，repair off）/ B2=treatment_op（全题注入 PRECISION）/ B3=treatment_op_routed（按 calc_type 路由注入）
-
-### Overall 结果
-
-| 组 | mode | Acc | vs Baseline Δ | improved | regressed | p |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| B0 | baseline | 0.4333 | — | — | — | — |
-| B1 | treatment_sf | 0.4333 | +0.00pp | 4 | 4 | 1.0 |
-| B2 | treatment_op | 0.3667 | -6.67pp | 1 | 9 | 0.0215 |
-| B3 | treatment_op_routed | 0.3917 | -4.17pp | 0 | 5 | 0.0625 |
-
-### 按 calc_type 分组
-
-| calc_type | n | baseline | B1(NL) | B2(op) | B3(op_routed) | B2-B0 | B3-B0 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| extraction | 53 | 0.7547 | 0.7170 | 0.6604 | 0.7170 | -9.43pp | -3.77pp |
-| arithmetic | 36 | 0.1389 | 0.1667 | 0.1389 | 0.1111 | +0.00pp | -2.78pp |
-| ratio | 18 | 0.1111 | 0.1667 | 0.0556 | 0.1111 | -5.56pp | +0.00pp |
-| ratio+multi_step | 9 | 0.2222 | 0.2222 | 0.0000 | 0.1111 | -22.22pp | -11.11pp |
-| arithmetic+multi_step | 3 | 0.6667 | 0.6667 | 0.6667 | 0.3333 | +0.00pp | -33.33pp |
-
-### 结论
-
-1. **H2 假设被否定**：operator template 不仅没有改善，反而显著伤害了模型表现。
-   - `treatment_op`（全题注入 PRECISION）：overall `-6.67pp`，`p=0.0215`，是显著负增益。
-   - `treatment_op_routed`（路由注入）：`-4.17pp`，伤害有所缓解但仍为负。
-
-2. **PRECISION 模板对 extraction 题伤害最大**：extraction 从 `0.7547` 降到 `0.6604`（B2）。"保留完整精度"这条规则让模型更倾向于过度计算，而不是直接读值。路由版（B3）对 extraction 注入的是 DIRECT_READ，伤害有所缓解（`0.7170`），但仍比 baseline 差。
-
-3. **NL memory（B1）在 repair=off 下变成了 0 增益**：这说明之前观察到的负增益有一部分来自 repair，关掉 repair 后 NL memory 至少不再明显伤害。但也不提供任何正增益。
-
-4. **对 arithmetic/ratio 子集，没有任何方案形成正增益**：这是最关键的发现。我们原本假设 operator template 在 arithmetic/ratio 上有机会帮助，但实际连 0 增益都不稳定。
-
-5. **核心推断**：当前 8B 模型在 BizBench 文本 QA 上的"prompt-side memory injection"路线可能已经触及天花板。无论是自然语言经验还是硬规则模板，任何额外的提示注入都倾向于干扰模型原本的解题行为，而不是帮助它。
-
-### 对后续路线的影响
-
-- H2 被否定后，优先做 H1（用更强模型验证是否是能力瓶颈）。
-- 如果 H1 也显示更强模型同样不受益，则应考虑完全放弃 prompt-side memory injection，转向：
-  - 结构化求解（让模型走固定步骤而不是自由推理）
-  - 或 fine-tuning / 检索侧改造
-
-## 6. 假设 1 验证结果：更强模型是否能吃下同一套 operator template
-
-结果目录：`ReasoningRag/test/results/h1_gemini_eff/`
-
-### Token-efficient 配置
-- backend: `gemini`，model: `gemini-2.5-flash`
-- 仅跑 2 组（`baseline` vs `treatment_op_routed`），不跑全矩阵
-- `limit=80`（先中等样本，不直接上 120/300）
-- `baseline_k=1`（少 shot）
-- `max_tokens=256`
-- `gemini_thinking_budget=0`（关闭 thinking 以减少输出消耗并避免 `MAX_TOKENS` 截断）
-- `temperature=0`, `--no-sf-repair`
-
-### Overall 结果
-
-| 组 | mode | Acc | vs Baseline Δ | improved | regressed | p |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| G0 | baseline | 0.5000 | — | — | — | — |
-| G1 | treatment_op_routed | 0.4875 | -1.25pp | 2 | 3 | 1.0 |
-
-### 按 calc_type 分组
-
-| calc_type | n | baseline | op_routed | Δ |
-| --- | ---: | ---: | ---: | ---: |
-| extraction | 33 | 0.8182 | 0.7879 | -3.03pp |
-| arithmetic | 26 | 0.3077 | 0.3462 | +3.85pp |
-| ratio | 13 | 0.1538 | 0.0769 | -7.69pp |
-| ratio+multi_step | 7 | 0.2857 | 0.2857 | +0.00pp |
-| arithmetic+multi_step | 1 | 1.0000 | 1.0000 | +0.00pp |
-
-### 结论
-
-1. **H1 未被支持（至少在当前模板与路由下）**：更强模型并未把整体效果拉成正增益，`op_routed` 仍相对 baseline 为负（`-1.25pp`）。
-
-2. **能力因素可能存在，但不是决定性因素**：相比 8B 的 `-4.17pp`（H2），Gemini 的负增益收敛到 `-1.25pp`，说明更强模型在“抗伤害”上更好；但它依然不能把该路线转为正收益。
-
-3. **提示侧注入路线仍不成立**：即使是更强模型，operator-template 注入仍在 extraction/ratio 子集产生副作用，说明问题不只是 8B 能力上限，更可能是“注入范式与任务结构不匹配”。
-
-### 后续路线更新
-
-- 结论上，H2 + H1 已形成一致证据：**继续堆 prompt-side memory injection 的 ROI 很低**。
-- 下一步应优先转向（而不是继续提示词微调）：
-  1. 结构化求解流程（先定题型，再执行固定算子）
-  2. 检索侧改造（检索“算子/公式/字段映射”而非自然语言经验）
-  3. 若仍走 self-evolution，需切换到 contrastive 生成“最小可执行规则”，并避免直接拼接到主提示
+（备注）旧版“最小因子消融”路线保留为备选；当前优先级已下调到 evidence-card 判别实验之后。

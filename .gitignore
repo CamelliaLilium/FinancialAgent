@@ -2,11 +2,18 @@
 .env
 .env.*
 !.env.example
+
+# Large data directories (upload as zip separately)
 rag_v1/
 datasets/
-# NV-Embed-v2: model files exceed GitHub LFS 2GB/file limit
 ReasoningRag/NV-Embed-v2/
 ReasoningRag/backup/
-# Python cache
-__pycache__/
-*.pyc
+ReasoningRag/images/
+ReasoningRag/raw/
+
+# Generated index files (rebuild from data)
+*.faiss
+
+# Logs
+debug-*.log
+nul

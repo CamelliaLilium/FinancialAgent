@@ -1,0 +1,15 @@
+{
+  "modes": [
+    "baseline",
+    "treatment_h3"
+  ],
+  "treatment_h3_vs_baseline": {
+    "paired_count": 120,
+    "baseline_accuracy": 0.4167,
+    "treatment_h3_accuracy": 0.4083,
+    "delta": -0.0083,
+    "improved_count": 3,
+    "regressed_count": 4,
+    "sign_test_p_value": 1.0
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "modes": [
+    "zeroshot",
+    "baseline",
+    "treatment_sf"
+  ],
+  "baseline_vs_zeroshot": {
+    "paired_count": 120,
+    "zeroshot_accuracy": 0.3583,
+    "baseline_accuracy": 0.4333,
+    "delta": 0.075,
+    "improved_count": 11,
+    "regressed_count": 2,
+    "sign_test_p_value": 0.022461
+  },
+  "treatment_sf_vs_baseline": {
+    "paired_count": 120,
+    "baseline_accuracy": 0.4333,
+    "treatment_sf_accuracy": 0.4083,
+    "delta": -0.025,
+    "improved_count": 2,
+    "regressed_count": 5,
+    "sign_test_p_value": 0.453125
+  }
+}
